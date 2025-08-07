@@ -23,7 +23,60 @@ pub mod denft {
     use super::*;
 
      pub fn initialize_user(ctx: Context<InitializeUser>) -> Result<()> {
-        handlers::initialize_user::handler(ctx)
+        handlers::initialize_user_handler::handler(ctx)
+    }
+
+    /// Upload a new file to the platform
+    /// Creates FileRecord with encrypted metadata and IPFS reference
+    pub fn upload_file(
+        ctx: Context<UploadFile>,
+        file_hash: [u8; 32],
+        ipfs_hash: String,
+        encrypted_metadata: String,
+        file_size: u64,
+        content_type: String,
+        description: String,
+    ) -> Result<()> {
+        handlers::upload_file_handler::handler(
+            ctx,
+            file_hash,
+            ipfs_hash,
+            encrypted_metadata,
+            file_size,
+            content_type,
+            description,
+        )
+    }
+
+    /// Verify file authenticity using file hash
+    /// Returns verification result with blockchain proof
+    pub fn verify_file(ctx: Context<VerifyFile>, file_hash: [u8; 32]) -> Result<()> {
+        handlers::verify_file_handler::handler(ctx, file_hash)
+    }
+
+    /// Record file access for audit trail
+    /// Updates download statistics and logs access
+    pub fn record_file_access(
+        ctx: Context<RecordFileAccess>,
+        access_type: AccessType,
+    ) -> Result<()> {
+        handlers::record_file_access_handler::handler(ctx, access_type)
+    }
+
+    /// Update file publicity for verification
+    /// Allows/disallows public verification without account
+    pub fn update_file_publicity(
+        ctx: Context<UpdateFilePublicity>,
+        is_public: bool,
+    ) -> Result<()> {
+        handlers::update_file_publicity_handler::handler(ctx, is_public)
+    }
+
+
+    // Delete a file (mark as inactive)
+    /// Updates user storage statistics and marks file as inactive
+    pub fn delete_file(ctx: Context<DeleteFile>) -> Result<()> {
+        handlers::delete_file_handler::handler(ctx)
     }
 }
 

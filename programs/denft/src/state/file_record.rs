@@ -42,7 +42,7 @@ impl FileRecord {
   32;  // reserved space
 
   pub fn space_required(metadata_len: usize) -> usize {
-    self::BASE_LEN +
+    FileRecord::BASE_LEN +
     MAX_IPFS_HASH_LENGTH +
     metadata_len +
     MAX_CONTENT_TYPE_LENGTH +
