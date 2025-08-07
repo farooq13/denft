@@ -60,6 +60,13 @@ pub mod denft {
         handlers::grant_access_handler::handler(ctx, accessor, permissions, expires_at, max_downloads)
     }
 
+
+    /// Revoke access to a file for a specific user
+    /// Marks AccessPermission as inactive
+    pub fn revoke_access(ctx: Context<RevokeAccess>) -> Result<()> {
+        handlers::revoke_access_handler::handler(ctx)
+    }
+
     /// Verify file authenticity using file hash
     /// Returns verification result with blockchain proof
     pub fn verify_file(ctx: Context<VerifyFile>, file_hash: [u8; 32]) -> Result<()> {
