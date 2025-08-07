@@ -48,6 +48,18 @@ pub mod denft {
         )
     }
 
+    /// Grant access to a file for another user
+    /// Creates AccessPermission record with specific permissions and expiration
+    pub fn grant_access(
+        ctx: Context<GrantAccess>,
+        accessor: Pubkey,
+        permissions: u8,
+        expires_at: Option<i64>,
+        max_downloads: Option<u32>,
+    ) -> Result<()> {
+        handlers::grant_access_handler::handler(ctx, accessor, permissions, expires_at, max_downloads)
+    }
+
     /// Verify file authenticity using file hash
     /// Returns verification result with blockchain proof
     pub fn verify_file(ctx: Context<VerifyFile>, file_hash: [u8; 32]) -> Result<()> {
