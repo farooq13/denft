@@ -87,7 +87,7 @@ pub mod handler {
         user_account.add_file(file_size);
 
         emit!(FileUploaded {
-            file_id: ctx.accounts.file_record.key(),
+            file_id: file_record.key(),
             owner: ctx.accounts.authority.key(),
             file_hash,
             ipfs_hash: file_record.ipfs_hash.clone(),
