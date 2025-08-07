@@ -61,3 +61,36 @@ Denft is a decentralized cloud storage platform that combines the familiar user 
                           │ • Content Hash  │
                           └─────────────────┘
 ```
+
+
+
+## File Structure
+```
+src/
+├── lib.rs                          # Main program entry point
+├── errors.rs                       # Error definitions
+├── state/
+│   ├── mod.rs                      # State module exports
+│   ├── user_account.rs             # UserAccount state and methods
+│   ├── file_record.rs              # FileRecord state and methods
+│   └── access_permission.rs        # AccessPermission state and methods
+├── context/
+│   ├── mod.rs                      # Context module exports
+│   ├── initialize_user.rs          # InitializeUser context
+│   ├── upload_file.rs              # UploadFile context
+│   ├── grant_access.rs             # GrantAccess context
+│   ├── revoke_access.rs            # RevokeAccess context
+│   ├── verify_file.rs              # VerifyFile context
+│   ├── record_file_access.rs       # RecordFileAccess context
+│   ├── delete_file.rs              # DeleteFile context
+│   └── update_file_publicity.rs    # UpdateFilePublicity context
+└── handlers/
+    ├── initialize_user_handler.rs          # Initialize user handler
+    ├── upload_file_handler.rs              # Upload file handler
+    ├── grant_access_handler.rs             # Grant access handler
+    ├── revoke_access_handler.rs            # Revoke access handler
+    ├── verify_file_handler.rs              # Verify file handler
+    ├── record_file_access_handler.rs       # Record file access handler
+    ├── delete_file_handler.rs              # Delete file handler
+    └── update_file_publicity_handler.rs    # Update file publicity handler
+```
