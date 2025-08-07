@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 use crate::{MAX_IPFS_HASH_LENGTH, MAX_CONTENT_TYPE_LENGTH, MAX_DESCRIPTION_LENGTH};
 
 #[account]
-#[derive(InitSpace)]
 pub struct FileRecord {
   pub owner: Pubkey,               // Owner of the file
   pub file_hash: [u8; 32],         // SHA-256 hash of the file content
@@ -24,7 +23,7 @@ pub struct FileRecord {
 } 
 
 
-impl<'info> FileRecord<info> {
+impl FileRecord {
   pub const BASE_LEN: usize = 8 +
   32 + // owne
   32 + // file_hash

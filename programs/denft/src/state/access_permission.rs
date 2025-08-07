@@ -1,9 +1,29 @@
 use anchor_lang::prelude::*;
 
+use crate::events::{FileAccessed};
+
 // Permission bitflags
 pub const PERMISSION_READ: u8 = 1;
 pub const PERMISSION_DOWNLOAD: u8 = 2;
 pub const PERMISSION_SHARE: u8 = 4;
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AccessType {
+    Read,
+    Download,
+    Share,
+}
+
+impl AccessType {
+    pub fn from_flag(flag: u8) -> Option<Self> {
+        match flag {
+            1 => Some(AccessType::Read),
+            2 => Some(AccessType::Download),
+            4 => Some(AccessType::Share),
+            _ => None,
+        }
+    }
+}
 
 #[account]
 pub struct AccessPermission {
@@ -21,7 +41,8 @@ pub struct AccessPermission {
 }
 
 
-impl<'info> AccessPermission<'info> {
+
+impl AccessPermission {
   pub const LEN: usize = 8 +
     32 +  // file_record
     32 +  // accessor
@@ -37,6 +58,7 @@ impl<'info> AccessPermission<'info> {
 
 
     pub fn is_valid(&self) -> bool {
+      let current_timestamp = Clock::get().unwrap().unix_timestamp;
       self.is_active &&
       self.expires_at.map_or(true, |exp| current_timestamp <= exp)
     }
@@ -48,12 +70,13 @@ impl<'info> AccessPermission<'info> {
 
     pub fn can_download(&self) -> bool {
       self.has_permission(PERMISSION_DOWNLOAD) &&
-      self.max_downloads.map_or(true, |max| self.used_downloads < max)
+      self.max_downloads.map_or(true, |max| (self.used_downloads as u64) < max)
+
     }
 
     pub fn consume_download(&mut self) -> Result<()> {
       if let Some(max) = self.max_downloads {
-        require!(self.used_downloads < max, crate::DenftError::DownloadLimitExceeded);
+        require!((self.used_downloads as u64) < max, crate::DenftError::DownloadLimitExceeded);
       }
       self.used_downloads += 1;
       Ok(())

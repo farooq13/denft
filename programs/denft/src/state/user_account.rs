@@ -14,7 +14,7 @@ pub struct UserAccount {
     pub reserved: [u8; 64],  // Reserved space for future features (64 bytes)
 }
 
-impl<'info> UserAccount<'info> {
+impl UserAccount {
     pub const LEN: usize = 8 + // discriminator
         32 +    // owner (Pubkey)
         4 +     // file_count (u32)
@@ -28,7 +28,7 @@ impl<'info> UserAccount<'info> {
 
         pub fn can_add_file(&self, file_size: u64) -> bool {
             self.is_active &&
-            self.file_account < self.file_limit &&
+            self.file_count < self.file_limit &&
             self.storage_used + file_size <= self.storage_limit
         }
 
