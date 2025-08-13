@@ -8,12 +8,15 @@ pub struct VerifyFile<'info> {
         mut,
         seeds = [
             b"file",
-            file_record.owner.as_ref(),
+            uploader.key().as_ref(),
             file_hash.as_ref()
         ],
         bump
     )]
     pub file_record: Account<'info, FileRecord>,
+
+    /// CHECK: uploader public key used for PDA derivation
+    pub uploader: UncheckedAccount<'info>,
     
     pub authority: Signer<'info>,
 }

@@ -24,29 +24,18 @@ pub struct FileRecord {
 
 
 impl FileRecord {
-  pub const BASE_LEN: usize = 8 +
-  32 + // owne
-  32 + // file_hash
-  4 +  // ipfs_hash length prefix
-  4 +  // encrypted_metadata length prefix
-  8 +  // file_size
-  4 +  // content_type length prefix
-  4 +  // description length prefix
-  8 +  // timestamp
-  1 +  // is_public_verification
-  8 +  // access_count
-  8 +  // download_count
-  1 +  // is_active
-  9 +  // deleted_at (Option<i64>)
-  8 +  // verification_id
-  32;  // reserved space
+  pub const BASE_LEN: usize =  8 +
+    32 +
+    32 +
+    (4 + MAX_IPFS_HASH_LENGTH) +
+    (4 + 256) + // choose a sensible cap for encrypted metadata
+    8 +
+    (4 + MAX_CONTENT_TYPE_LENGTH) +
+    (4 + MAX_DESCRIPTION_LENGTH) +
+    8 + 1 + 8 + 8 + 1 + 9 + 8 + 32;
 
-  pub fn space_required(metadata_len: usize) -> usize {
-    FileRecord::BASE_LEN +
-    MAX_IPFS_HASH_LENGTH +
-    metadata_len +
-    MAX_CONTENT_TYPE_LENGTH +
-    MAX_DESCRIPTION_LENGTH
+  pub fn space_required() -> usize {
+    FileRecord::BASE_LEN
   }
 
   pub fn is_accessible(&self) -> bool {

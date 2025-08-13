@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::events::{FileAccessed};
+
 
 // Permission bitflags
 pub const PERMISSION_READ: u8 = 1;
@@ -15,12 +15,11 @@ pub enum AccessType {
 }
 
 impl AccessType {
-    pub fn from_flag(flag: u8) -> Option<Self> {
-        match flag {
-            1 => Some(AccessType::Read),
-            2 => Some(AccessType::Download),
-            4 => Some(AccessType::Share),
-            _ => None,
+    pub fn as_flag(self) -> Option<Self> {
+        match self {
+            AccessType::Read => Some(AccessType::Read),
+            AccessType::Download => Some(AccessType::Download),
+            AccessType::Share => Some(AccessType::Share),
         }
     }
 }
@@ -58,9 +57,13 @@ impl AccessPermission {
 
 
     pub fn is_valid(&self) -> bool {
-      let current_timestamp = Clock::get().unwrap().unix_timestamp;
-      self.is_active &&
-      self.expires_at.map_or(true, |exp| current_timestamp <= exp)
+      match Clock::get() {
+        Ok(clock) => {
+          let now = clock.unix_timestamp;
+          self.is_active && self.expires_at.map_or(true, |exp| now <= exp)
+        }
+        Err(_) => false
+      }
     }
 
 

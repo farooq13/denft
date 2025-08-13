@@ -23,8 +23,7 @@ pub mod handler {
     use super::*;
     use anchor_lang::solana_program::clock::Clock;
     use crate::{
-    FileRecord, AccessPermission, DenftError, AccessType, FileAccessed,
-    access_permission::PERMISSION_DOWNLOAD,
+    access_permission::PERMISSION_DOWNLOAD, AccessPermission, AccessType, DenftError, FileAccessed, FileRecord, PERMISSION_READ, PERMISSION_SHARE
 };
 
     pub fn record_file_access(
@@ -61,10 +60,18 @@ pub mod handler {
         // Update access count using helper method
         file_record.increment_access();
 
+        
+
+        let access_flag = match access_type {
+            AccessType::Read => PERMISSION_READ,
+            AccessType::Download => PERMISSION_DOWNLOAD,
+            AccessType::Share => PERMISSION_SHARE,
+        };
+
         emit!(FileAccessed {
             file_id: ctx.accounts.file_record.key(),
             accessor: ctx.accounts.authority.key(),
-            access_type,
+            access_type: access_flag,
             timestamp: clock.unix_timestamp,
         });
 

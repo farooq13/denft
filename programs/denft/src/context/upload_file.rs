@@ -19,7 +19,7 @@ pub struct UploadFile<'info> {
     #[account(
         init,
         payer = authority,
-        space = FileRecord::space_required(500), // Extra space for metadata
+        space = FileRecord::space_required(),
         seeds = [
             b"file",
             authority.key().as_ref(),
