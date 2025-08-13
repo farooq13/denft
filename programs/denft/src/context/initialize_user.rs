@@ -11,7 +11,6 @@ pub struct InitializeUser<'info> {
   #[account(mut)]
   pub authority: Signer<'info>,
 
-
   #[account(
     init,
     payer = authority,

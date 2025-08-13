@@ -54,7 +54,7 @@ pub struct FileVerified {
 pub struct FileAccessed {
     pub file_id: Pubkey,
     pub accessor: Pubkey,
-    pub access_type: AccessType,
+    pub access_type: u8,
     pub timestamp: i64,
 }
 

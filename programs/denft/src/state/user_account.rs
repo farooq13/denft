@@ -2,7 +2,6 @@ use anchor_lang::prelude::*;
 
 
 #[account]
-#[derive(InitSpace)]
 pub struct UserAccount {
     pub owner: Pubkey,       // Account owner
     pub file_count: u32,     // Number of files uploaded (4 bytes)
