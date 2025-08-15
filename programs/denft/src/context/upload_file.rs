@@ -1,9 +1,12 @@
 use anchor_lang::prelude::*;
-use crate::{
-    UserAccount, FileRecord, DenftError, MAX_FILE_SIZE, MAX_IPFS_HASH_LENGTH,
-    MAX_CONTENT_TYPE_LENGTH, MAX_DESCRIPTION_LENGTH, FileUploaded,
-    generate_verification_id::generate_verification_id,
-};
+use anchor_lang::solana_program::clock::Clock;
+use anchor_lang::emit;
+
+use crate::state::{UserAccount, FileRecord};
+use crate::state::constants::{MAX_FILE_SIZE, MAX_IPFS_HASH_LENGTH, MAX_CONTENT_TYPE_LENGTH, MAX_DESCRIPTION_LENGTH};
+use crate::errors::DenftError;
+use crate::events::FileUploaded;
+use crate::generate_verification_id::generate_verification_id;
 
 #[derive(Accounts)]
 #[instruction(file_hash: [u8; 32])]
@@ -19,7 +22,7 @@ pub struct UploadFile<'info> {
     #[account(
         init,
         payer = authority,
-        space = FileRecord::space_required(),
+        space = FileRecord::space_required(), // Extra space for metadata
         seeds = [
             b"file",
             authority.key().as_ref(),
@@ -37,12 +40,6 @@ pub struct UploadFile<'info> {
 
 pub mod handler {
     use super::*;
-    use anchor_lang::solana_program::clock::Clock;
-    use crate::{
-    UserAccount, FileRecord, DenftError, MAX_FILE_SIZE, MAX_IPFS_HASH_LENGTH,
-    MAX_CONTENT_TYPE_LENGTH, MAX_DESCRIPTION_LENGTH, FileUploaded,
-    generate_verification_id::generate_verification_id,
-    };
 
     pub fn upload_file(
         ctx: Context<UploadFile>,
