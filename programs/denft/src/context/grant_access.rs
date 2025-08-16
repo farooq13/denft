@@ -1,18 +1,23 @@
 use anchor_lang::prelude::*;
-use crate::{FileRecord, AccessPermission, DenftError, AccessGranted};
+use anchor_lang::solana_program::clock::Clock;
+use anchor_lang::emit;
+
+use crate::state::{FileRecord, AccessPermission};
+use crate::state::access_permission::{PERMISSION_READ, PERMISSION_DOWNLOAD, PERMISSION_SHARE};
+use crate::errors::DenftError;
+use crate::events::AccessGranted;
 
 #[derive(Accounts)]
 pub struct GrantAccess<'info> {
     #[account(
-        constraint = file_record.owner == authority.key() @ DenftError::Unauthorized,
-        constraint = file_record.is_active @ DenftError::FileNotActive
+        constraint = file_record.owner == authority.key() @ DenftError::Unauthorized
     )]
     pub file_record: Account<'info, FileRecord>,
     
     #[account(
         init,
         payer = authority,
-        space = AccessPermission::LEN,
+        space = 8 + AccessPermission::LEN,
         seeds = [
             b"access",
             file_record.key().as_ref(),
@@ -25,16 +30,14 @@ pub struct GrantAccess<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     
-    /// CHECK: This is the accessor's public key, validated by seeds
-    pub accessor: AccountInfo<'info>,
+    /// CHECK: This is the user who will receive access
+    pub accessor: UncheckedAccount<'info>,
     
     pub system_program: Program<'info, System>,
 }
 
 pub mod handler {
     use super::*;
-    use anchor_lang::solana_program::clock::Clock;
-    use crate::{FileRecord, AccessPermission, DenftError, AccessGranted};
 
     pub fn grant_access(
         ctx: Context<GrantAccess>,
@@ -43,19 +46,20 @@ pub mod handler {
         expires_at: Option<i64>,
         max_downloads: Option<u32>,
     ) -> Result<()> {
-        let access_permission = &mut ctx.accounts.access_permission;
-        let clock = Clock::get()?;
-
-        // Validate permissions using helper method
+        // Validate permissions
         require!(
             AccessPermission::is_valid_permission(permissions),
             DenftError::InvalidPermissions
         );
 
-        // Check if expiration time is in the future
-        if let Some(exp_time) = expires_at {
-            require!(exp_time > clock.unix_timestamp, DenftError::InvalidExpirationTime);
+        // Validate expiration time if provided
+        if let Some(expiry) = expires_at {
+            let clock = Clock::get()?;
+            require!(expiry > clock.unix_timestamp, DenftError::InvalidExpirationTime);
         }
+
+        let access_permission = &mut ctx.accounts.access_permission;
+        let clock = Clock::get()?;
 
         // Initialize access permission
         access_permission.file_record = ctx.accounts.file_record.key();
@@ -63,7 +67,7 @@ pub mod handler {
         access_permission.permissions = permissions;
         access_permission.granted_at = clock.unix_timestamp;
         access_permission.expires_at = expires_at;
-        access_permission.max_downloads = max_downloads.map(|v| v as u64);
+        access_permission.max_downloads = max_downloads.map(|x| x as u64);
         access_permission.used_downloads = 0;
         access_permission.granted_by = ctx.accounts.authority.key();
         access_permission.is_active = true;
