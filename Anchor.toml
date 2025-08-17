@@ -8,6 +8,9 @@ skip-lint = false
 [programs.localnet]
 denft = "5KNDVsCpPfkjiD4sYiDfMYRC7rH4DCXmboorZZ8NExBt"
 
+[programs.devnet]
+denft = "9fUNv3nRE8a5CjLUEzzJmA9o5Sw2wstnfoaseobXHqkW"
+
 [registry]
 url = "https://api.apr.dev"
 

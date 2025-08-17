@@ -16,7 +16,7 @@ pub use handlers::*;
 pub use events::*;
 pub use generate_verification_id::*;
 
-declare_id!("5KNDVsCpPfkjiD4sYiDfMYRC7rH4DCXmboorZZ8NExBt");
+declare_id!("9fUNv3nRE8a5CjLUEzzJmA9o5Sw2wstnfoaseobXHqkW");
 
 #[program]
 pub mod denft {
