@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 
-use crate::state::access_permission::AccessType;
 
 // Events for indexing and monitoring
 #[event]

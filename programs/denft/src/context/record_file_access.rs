@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use crate::{
-    FileRecord, AccessPermission, DenftError, AccessType, FileAccessed,
-    access_permission::PERMISSION_DOWNLOAD,
+    FileRecord, AccessPermission, DenftError
 };
 
 #[derive(Accounts)]
@@ -23,7 +22,7 @@ pub mod handler {
     use super::*;
     use anchor_lang::solana_program::clock::Clock;
     use crate::{
-    access_permission::PERMISSION_DOWNLOAD, AccessPermission, AccessType, DenftError, FileAccessed, FileRecord, PERMISSION_READ, PERMISSION_SHARE
+    access_permission::PERMISSION_DOWNLOAD, AccessType, DenftError, FileAccessed, PERMISSION_READ, PERMISSION_SHARE
 };
 
     pub fn record_file_access(

@@ -3,7 +3,6 @@ use anchor_lang::solana_program::clock::Clock;
 use anchor_lang::emit;
 
 use crate::state::{FileRecord, AccessPermission};
-use crate::state::access_permission::{PERMISSION_READ, PERMISSION_DOWNLOAD, PERMISSION_SHARE};
 use crate::errors::DenftError;
 use crate::events::AccessGranted;
 

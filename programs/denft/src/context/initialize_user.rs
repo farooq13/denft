@@ -1,10 +1,7 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::clock::Clock;
-use anchor_lang::emit;
 
 use crate::state::{UserAccount};
-use crate::state::constants::{MAX_STORAGE_PER_USER, MAX_FILES_PER_USER};
-use crate::events::UserInitialized;
+
 
 #[derive(Accounts)]
 pub struct InitializeUser<'info> {
