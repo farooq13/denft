@@ -47,7 +47,7 @@ describe("denft", () => {
     provider: anchor.AnchorProvider,
     authority: Keypair,
     recipient: PublicKey,
-    lamports: number = 0.5 * LAMPORTS_PER_SOL // Increased funding amount
+    lamports: number = 0.05 * LAMPORTS_PER_SOL 
   ) {
     try {
       const tx = new anchor.web3.Transaction().add(
@@ -1217,7 +1217,7 @@ describe("denft", () => {
         program.programId
       );
 
-      const nearFutureTime = Math.floor(Date.now() / 1000) + 2;
+      const nearFutureTime = Math.floor(Date.now() / 1000) + 10;
 
       await program.methods
         .grantAccess(
