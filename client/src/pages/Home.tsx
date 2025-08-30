@@ -5,12 +5,6 @@ import {
   Card,
   CardBody,
   Chip,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
 } from '@nextui-org/react';
 import {
   Cloud,
@@ -24,10 +18,7 @@ import {
   Users,
   Smartphone,
   ArrowRight,
-  Play,
   CheckCircle,
-  Star,
-  TrendingUp,
   FileText,
   Image,
   Video,
@@ -40,20 +31,7 @@ import { useFiles } from '../contexts/FileContext';
 
 // Feature cards data
 const features = [
-  {
-    icon: Shield,
-    title: 'Blockchain Verified',
-    description: 'Every file is cryptographically verified and stored on Solana blockchain for immutable proof of authenticity.',
-    color: 'from-blue-500 to-cyan-500',
-    bgGlow: 'bg-blue-500/20',
-  },
-  {
-    icon: Cloud,
-    title: 'Decentralized Storage',
-    description: 'Files distributed across IPFS network ensuring high availability and resistance to censorship.',
-    color: 'from-purple-500 to-pink-500',
-    bgGlow: 'bg-purple-500/20',
-  },
+  
   {
     icon: Zap,
     title: 'Lightning Fast',
@@ -102,11 +80,11 @@ const supportedTypes = [
 ];
 
 export const Home: React.FC = () => {
-  
+   
   const navigate = useNavigate();
   const { isConnected, connectWallet, isLoading } = useWallet();
   const { publicFiles } = useFiles();
-  const { isOpen: isDemoOpen, onOpen: onDemoOpen, onClose: onDemoClose } = useDisclosure();
+  
   
   const [animationStep, setAnimationStep] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -178,12 +156,7 @@ export const Home: React.FC = () => {
         <div className="max-w-6xl mx-auto relative z-10">
           {/* Main hero content */}
           <div className={`transition-all duration-1000 ${animationStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            {/* Badge */}
-            <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-full px-6 py-2 mb-8">
-              <Star className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium text-white">Powered by Solana Blockchain</span>
-              <Chip size="sm" color="success" variant="flat">New</Chip>
-            </div>
+           
 
             {/* Main title */}
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">
@@ -212,32 +185,10 @@ export const Home: React.FC = () => {
                 {isConnected ? 'Go to Dashboard' : 'Get Started Free'}
               </Button>
 
-              <Button
-                size="lg"
-                variant="bordered"
-                onPress={onDemoOpen}
-                className="border-slate-600 text-slate-300 hover:border-slate-500 hover:text-white px-8 py-3 rounded-lg transition-all duration-300"
-                startContent={<Play className="w-5 h-5" />}
-              >
-                Watch Demo
-              </Button>
+              
             </div>
 
-            {/* Trust indicators */}
-            <div className={`flex flex-wrap items-center justify-center space-x-8 text-slate-400 transition-all duration-700 delay-500 ${animationStep >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
-              <div className="flex items-center space-x-2">
-                <Shield className="w-4 h-4 text-green-400" />
-                <span className="text-sm">Blockchain Secured</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Globe className="w-4 h-4 text-blue-400" />
-                <span className="text-sm">Globally Distributed</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Lock className="w-4 h-4 text-purple-400" />
-                <span className="text-sm">End-to-End Encrypted</span>
-              </div>
-            </div>
+           
           </div>
         </div>
 
@@ -250,9 +201,9 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Statistics Section */}
-      <section className="py-20 bg-gradient-to-r from-slate-800/50 to-slate-900/50 backdrop-blur-sm">
+      <section className="py-20">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid sgrid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => {
               const Icon = stat.icon;
               const animatedValue = useAnimatedCounter(
@@ -298,7 +249,7 @@ export const Home: React.FC = () => {
           </div>
 
           {/* Features grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-8">
             {features.map((feature, index) => {
               const Icon = feature.icon;
               
@@ -360,14 +311,14 @@ export const Home: React.FC = () => {
                 step: '01',
                 icon: Smartphone,
                 title: 'Connect Wallet',
-                description: 'Link your Solana wallet to start storing files securely on the blockchain.',
+                description: 'Link your Solana wallet to start storing files securely.',
                 color: 'from-blue-500 to-cyan-500',
               },
               {
                 step: '02',
                 icon: Upload,
                 title: 'Upload Files',
-                description: 'Drag and drop your files. They\'re encrypted, hashed, and stored on IPFS.',
+                description: 'Drag and drop your files. They\'re encrypted, hashed, and stored.',
                 color: 'from-purple-500 to-pink-500',
               },
               {
@@ -405,7 +356,7 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Supported File Types */}
-      <section className="py-20 px-4">
+      {/* <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
@@ -419,7 +370,7 @@ export const Home: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-8">
             {supportedTypes.map((type, index) => {
               const Icon = type.icon;
               
@@ -451,7 +402,7 @@ export const Home: React.FC = () => {
             })}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Recent Public Files */}
       {publicFiles.length > 0 && (
@@ -555,48 +506,7 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Demo Modal */}
-      <Modal 
-        isOpen={isDemoOpen} 
-        onClose={onDemoClose}
-        size="4xl"
-        backdrop="blur"
-        classNames={{
-          base: "bg-slate-900/95 backdrop-blur-xl border border-slate-700",
-          header: "border-b border-slate-700",
-          body: "py-6",
-        }}
-      >
-        <ModalContent>
-          <ModalHeader>
-            <h3 className="text-2xl font-bold text-white">Denft Demo</h3>
-          </ModalHeader>
-          <ModalBody>
-            <div className="aspect-video bg-slate-800 rounded-lg flex items-center justify-center border border-slate-700">
-              <div className="text-center">
-                <Play className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-                <p className="text-slate-300">Demo video coming soon...</p>
-                <p className="text-sm text-slate-500 mt-2">
-                  Learn how to upload, share, and verify files on Denft
-                </p>
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" onPress={onDemoClose}>
-              Close
-            </Button>
-            <Button 
-              color="primary"
-              onPress={() => {
-                onDemoClose();
-                handleGetStarted();
-              }}
-            >
-              Try It Now
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      
     </div>
   );
 };
