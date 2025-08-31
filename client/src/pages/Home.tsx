@@ -142,6 +142,7 @@ export const Home: React.FC = () => {
 
   return (
     <div className="relative overflow-hidden">
+    
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center justify-center text-center px-4">
         {/* Interactive mouse follower */}
@@ -158,19 +159,12 @@ export const Home: React.FC = () => {
           <div className={`transition-all duration-1000 ${animationStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
            
 
-            {/* Main title */}
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">
-              Decentralized Cloud
-              <br />
-              <span className="text-4xl md:text-6xl">Storage Revolution</span>
-            </h1>
-
             {/* Subtitle */}
-            <p className="text-xl md:text-2xl text-slate-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Store, share, and verify your files with{' '}
-              <span className="text-blue-400 font-semibold">blockchain security</span> and{' '}
-              <span className="text-purple-400 font-semibold">decentralized reliability</span>.
-              Your data, your control.
+            <p className="text-xl md:text-2xl text-slate-300 mb-8 max-w-3xl mx-auto leading-relaxed font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">
+              Secure file storage {' '}
+              <span className="text-blue-400 font-semibold">with blockchain-backed</span> authenticity{' '}
+              <span className="text-purple-400 font-semibold">and </span>
+              user control.
             </p>
 
             {/* CTA buttons */}
@@ -183,17 +177,13 @@ export const Home: React.FC = () => {
                 endContent={<ArrowRight className="w-5 h-5 ml-2" />}
               >
                 {isConnected ? 'Go to Dashboard' : 'Get Started Free'}
-              </Button>
-
-              
+              </Button> 
             </div>
-
-           
           </div>
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div className="absolute bottom-[150px] left-1/2 transform -translate-x-1/2 animate-bounce">
           <div className="w-6 h-10 border-2 border-slate-500 rounded-full">
             <div className="w-1 h-3 bg-gradient-to-b from-blue-400 to-purple-400 rounded-full mx-auto mt-2 animate-pulse" />
           </div>
@@ -309,38 +299,30 @@ export const Home: React.FC = () => {
             {[
               {
                 step: '01',
-                icon: Smartphone,
                 title: 'Connect Wallet',
                 description: 'Link your Solana wallet to start storing files securely.',
                 color: 'from-blue-500 to-cyan-500',
               },
               {
                 step: '02',
-                icon: Upload,
                 title: 'Upload Files',
                 description: 'Drag and drop your files. They\'re encrypted, hashed, and stored.',
                 color: 'from-purple-500 to-pink-500',
               },
               {
                 step: '03',
-                icon: Share2,
                 title: 'Share & Verify',
                 description: 'Share with custom permissions or verify authenticity anytime, anywhere.',
                 color: 'from-pink-500 to-red-500',
               },
             ].map((step, index) => {
-              const Icon = step.icon;
+             
               
               return (
                 <div key={step.step} className="relative text-center group">
                   {/* Step number */}
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-slate-800 to-slate-700 border-2 border-slate-600 rounded-full text-2xl font-bold text-white mb-6 group-hover:border-blue-500 transition-all duration-300">
                     {step.step}
-                  </div>
-
-                  {/* Icon */}
-                  <div className={`inline-flex p-6 rounded-2xl mb-6 bg-gradient-to-r ${step.color} bg-opacity-20 relative group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className="w-12 h-12 text-white" />
                   </div>
 
                   {/* Content */}

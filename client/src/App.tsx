@@ -5,15 +5,15 @@ import { WalletProvider } from './contexts/WalletContext.tsx';
 import { FileProvider } from './contexts/FileContext';
 import { ToasterProvider } from './contexts/ToasterContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-// import { Navbar } from './components/layout/Navbar';
+import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
 import { LoadingScreen } from './components/ui/LoadingScreen';
 import { ParticleBackground } from './components/ui/ParticleBackground';
 import { Home } from './pages/Home';
 import { Dashboard } from './pages/Dashboard';
-// import { Upload } from './pages/Upload';
+import { Upload } from './pages/Upload';
 // import { Verify } from './pages/Verify';
-// import { Files } from './pages/Files';
+import { Files } from './pages/Files';
 // import { SharedFiles } from './pages/SharedFiles';
 // import { Profile } from './pages/Profile';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -84,7 +84,7 @@ function App() {
                   <div className="relative z-10 min-h-screen backdrop-blur-sm">
                     {/* Enhanced navbar with blur effect */}
                     <div className="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-blue-500/20">
-                      {/* <Navbar /> */}
+                      <Navbar />
                     </div>
                     
                     {/* Main content area with enhanced styling */}
@@ -101,22 +101,22 @@ function App() {
                               </ProtectedRoute>
                             }
                           />
-                          {/* <Route
+                          <Route
                             path="/upload"
                             element={
                               <ProtectedRoute>
                                 <Upload />
                               </ProtectedRoute>
                             }
-                          /> */}
-                          {/* <Route
+                          />
+                          <Route
                             path="/files"
                             element={
                               <ProtectedRoute>
                                 <Files />
                               </ProtectedRoute>
                             }
-                          /> */}
+                          />
                           {/* <Route
                             path="/shared"
                             element={
