@@ -63,35 +63,6 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
           {/* Brand Section */}
           <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center space-x-3 group mb-6">
-              <div className="relative">
-                <Cloud className="w-10 h-10 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse" />
-              </div>
-              <div>
-                <span className="font-bold text-2xl bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  Denft
-                </span>
-                <p className="text-xs text-slate-400 -mt-1">Decentralized Cloud Storage</p>
-              </div>
-            </Link>
-
-            {/* Feature badges */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <div
-                    key={index}
-                    className="flex items-center space-x-2 px-3 py-1 bg-slate-800/50 rounded-full border border-slate-700"
-                  >
-                    <Icon className="w-3 h-3 text-blue-400" />
-                    <span className="text-xs text-slate-300">{feature.text}</span>
-                  </div>
-                );
-              })}
-            </div>
-
             {/* Social Links */}
             <div className="flex space-x-4">
               {socialLinks.map((social, index) => {
@@ -113,59 +84,61 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Footer Links */}
-          <div>
-            <h3 className="font-semibold text-white mb-4">Product</h3>
-            <ul className="space-y-3">
-              {footerLinks.product.map((link, index) => (
-                <li key={index}>
-                  <Link
-                    to={link.href}
-                    className="text-slate-400 hover:text-blue-400 transition-colors duration-300 text-sm flex items-center group"
-                  >
-                    <span>{link.label}</span>
-                    <ArrowUp className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 rotate-45 transition-all duration-300" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <div className='grid grid-cols-2 gap-8'>
+              <div>
+              <h3 className="font-semibold text-white mb-4">Product</h3>
+              <ul className="space-y-3">
+                {footerLinks.product.map((link, index) => (
+                  <li key={index}>
+                    <Link
+                      to={link.href}
+                      className="text-slate-400 hover:text-blue-400 transition-colors duration-300 text-sm flex items-center group"
+                    >
+                      <span>{link.label}</span>
+                      <ArrowUp className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 rotate-45 transition-all duration-300" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          <div>
-            <h3 className="font-semibold text-white mb-4">Resources</h3>
-            <ul className="space-y-3">
-              {footerLinks.resources.map((link, index) => (
-                <li key={index}>
-                  <a
-                    href={link.href}
-                    target={link.external ? "_blank" : undefined}
-                    rel={link.external ? "noopener noreferrer" : undefined}
-                    className="text-slate-400 hover:text-blue-400 transition-colors duration-300 text-sm flex items-center group"
-                  >
-                    <span>{link.label}</span>
-                    {link.external && (
-                      <ExternalLink className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 transition-all duration-300" />
-                    )}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+            <div>
+              <h3 className="font-semibold text-white mb-4">Resources</h3>
+              <ul className="space-y-3">
+                {footerLinks.resources.map((link, index) => (
+                  <li key={index}>
+                    <a
+                      href={link.href}
+                      target={link.external ? "_blank" : undefined}
+                      rel={link.external ? "noopener noreferrer" : undefined}
+                      className="text-slate-400 hover:text-blue-400 transition-colors duration-300 text-sm flex items-center group"
+                    >
+                      <span>{link.label}</span>
+                      {link.external && (
+                        <ExternalLink className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+                      )}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          <div>
-            <h3 className="font-semibold text-white mb-4">Company</h3>
-            <ul className="space-y-3">
-              {footerLinks.company.map((link, index) => (
-                <li key={index}>
-                  <Link
-                    to={link.href}
-                    className="text-slate-400 hover:text-blue-400 transition-colors duration-300 text-sm flex items-center group"
-                  >
-                    <span>{link.label}</span>
-                    <ArrowUp className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 rotate-45 transition-all duration-300" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <div>
+              <h3 className="font-semibold text-white mb-4">Company</h3>
+              <ul className="space-y-3">
+                {footerLinks.company.map((link, index) => (
+                  <li key={index}>
+                    <Link
+                      to={link.href}
+                      className="text-slate-400 hover:text-blue-400 transition-colors duration-300 text-sm flex items-center group"
+                    >
+                      <span>{link.label}</span>
+                      <ArrowUp className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 rotate-45 transition-all duration-300" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -178,23 +151,6 @@ export const Footer: React.FC = () => {
               © {currentYear} Denft. All rights reserved.
             </p>
            
-          </div>
-        </div>
-
-        {/* Additional info banner */}
-        <div className="mt-8 p-4 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-lg">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center space-x-3 mb-3 md:mb-0">
-              <Shield className="w-5 h-5 text-blue-400" />
-              <div>
-                <p className="text-sm font-medium text-white">
-                  Your files are secured by Solana blockchain
-                </p>
-                <p className="text-xs text-slate-400">
-                  Immutable proof of authenticity and ownership
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
