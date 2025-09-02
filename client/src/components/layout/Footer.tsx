@@ -4,14 +4,10 @@ import { Button, Divider } from '@nextui-org/react';
 import {
   Cloud,
   Twitter,
-  Github,
-  MessageCircle,
-  Mail,
   ExternalLink,
   Shield,
   Globe,
   Zap,
-  Heart,
   ArrowUp,
 } from 'lucide-react';
 
@@ -41,7 +37,7 @@ export const Footer: React.FC = () => {
   };
 
   const socialLinks = [
-    { icon: Twitter, href: 'https://twitter.com/denft', label: 'Twitter' },
+    { icon: Twitter, href: 'https://x.com/denftcloud', label: 'Twitter' },
   ];
 
   const features = [
