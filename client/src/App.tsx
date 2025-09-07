@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { NextUIProvider } from '@nextui-org/react';
-import { WalletProvider } from './contexts/WalletContext.tsx';
+import { WalletProvider } from './contexts/WalletContext';
 import { FileProvider } from './contexts/FileContext';
 import { ToasterProvider } from './contexts/ToasterContext';
 import { ThemeProvider } from './contexts/ThemeContext';
