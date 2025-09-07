@@ -16,12 +16,6 @@ import {
   Avatar,
   Badge,
   Chip,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
 } from '@nextui-org/react';
 import {
   Cloud,
@@ -30,9 +24,7 @@ import {
   Files,
   Share2,
   User,
-  Settings,
   LogOut,
-  Wallet,
   Copy,
   ExternalLink,
   Sun,
@@ -40,24 +32,26 @@ import {
   Monitor,
   Bell,
   Search,
-  Menu,
 } from 'lucide-react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useFiles } from '../../contexts/FileContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { WalletButton } from '../wallet/WalletButton';
 
+// Define Theme type
+type Theme = 'light' | 'dark' | 'system';
+
 export const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isConnected, walletAddress, balance, disconnectWallet, walletName } = useWallet();
-  const { files, recentFiles } = useFiles();
-  const { theme, setTheme, toggleTheme, resolvedTheme } = useTheme();
-  const { isOpen: isMenuOpen, onOpen: onMenuOpen, onClose: onMenuClose } = useDisclosure();
+  const { files } = useFiles();
+  const { theme, setTheme } = useTheme();
   
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications] = useState(3); // Mock notification count
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Handle scroll effect for navbar styling
   useEffect(() => {
@@ -97,12 +91,22 @@ export const Navbar: React.FC = () => {
     return currentItem?.label || 'Denft';
   };
 
+  // Handle menu toggle
+  const handleMenuToggle = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  // Close menu
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+
   return (
     <>
       <NextUINavbar
         isBordered
         isMenuOpen={isMenuOpen}
-        onMenuOpenChange={onMenuOpen}
+        onMenuOpenChange={setIsMenuOpen}
         classNames={{
           base: `transition-all duration-300 ${
             isScrolled 
@@ -112,14 +116,20 @@ export const Navbar: React.FC = () => {
           wrapper: "px-6 max-w-7xl",
           brand: "text-white",
           content: "text-white",
+          menu: "bg-slate-900/95 backdrop-blur-xl border-r border-slate-700 pt-6",
+          menuItem: "text-white",
         }}
         height="4rem"
       >
-        {/* Brand Section */}
+        {/* Mobile Menu Toggle */}
         <NavbarContent className="sm:hidden" justify="start">
-          <NavbarMenuToggle />
+          <NavbarMenuToggle 
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            className="text-white hover:text-blue-400 transition-colors"
+          />
         </NavbarContent>
 
+        {/* Mobile Brand */}
         <NavbarContent className="sm:hidden pr-3" justify="center">
           <NavbarBrand>
             <Link to="/" className="flex items-center space-x-2 group">
@@ -134,6 +144,7 @@ export const Navbar: React.FC = () => {
           </NavbarBrand>
         </NavbarContent>
 
+        {/* Desktop Navigation */}
         <NavbarContent className="hidden sm:flex gap-8" justify="center">
           <NavbarBrand>
             <Link to="/" className="flex items-center space-x-3 group">
@@ -154,7 +165,6 @@ export const Navbar: React.FC = () => {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
-            const canAccess = !item.protected || isConnected;
 
             if (item.protected && !isConnected) return null;
 
@@ -206,7 +216,7 @@ export const Navbar: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-slate-300 hover:text-white"
+                  className="text-slate-300 hover:text-white hover:bg-slate-800/50"
                   isIconOnly
                 >
                   {theme === 'light' && <Sun className="w-4 h-4" />}
@@ -218,6 +228,8 @@ export const Navbar: React.FC = () => {
                 variant="faded"
                 className="bg-slate-800/90 backdrop-blur-xl border border-slate-700"
                 onAction={(key) => setTheme(key as Theme)}
+                selectedKeys={[theme]}
+                selectionMode="single"
               >
                 <DropdownItem key="light" startContent={<Sun className="w-4 h-4" />}>
                   Light
@@ -238,18 +250,19 @@ export const Navbar: React.FC = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-slate-300 hover:text-white relative"
+                className="text-slate-300 hover:text-white hover:bg-slate-800/50 relative"
                 isIconOnly
                 onPress={() => navigate('/notifications')}
               >
                 <Bell className="w-4 h-4" />
                 {notifications > 0 && (
                   <Badge
-                    content={notifications}
                     color="danger"
-                    className="absolute -top-1 -right-1"
+                    className="absolute -top-1 -right-1 min-w-5 h-5"
                     size="sm"
-                  />
+                  >
+                    {notifications}
+                  </Badge>
                 )}
               </Button>
             </NavbarItem>
@@ -370,7 +383,7 @@ export const Navbar: React.FC = () => {
         </NavbarContent>
 
         {/* Mobile Menu */}
-        <NavbarMenu className="bg-slate-900/95 backdrop-blur-xl border-r border-slate-700">
+        <NavbarMenu>
           {/* Mobile Search */}
           <NavbarMenuItem>
             <div className="relative w-full mb-6">
@@ -384,7 +397,7 @@ export const Navbar: React.FC = () => {
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' && searchQuery.trim()) {
                     navigate(`/files?search=${encodeURIComponent(searchQuery)}`);
-                    onMenuClose();
+                    closeMenu();
                   }
                 }}
               />
@@ -395,7 +408,6 @@ export const Navbar: React.FC = () => {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
-            const canAccess = !item.protected || isConnected;
 
             if (item.protected && !isConnected) return null;
 
@@ -403,7 +415,7 @@ export const Navbar: React.FC = () => {
               <NavbarMenuItem key={item.href}>
                 <Link
                   to={item.href}
-                  onClick={onMenuClose}
+                  onClick={closeMenu}
                   className={`flex items-center space-x-3 w-full p-4 rounded-lg transition-all duration-300 ${
                     isActive
                       ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white border border-blue-500/30'
@@ -416,6 +428,43 @@ export const Navbar: React.FC = () => {
               </NavbarMenuItem>
             );
           })}
+
+          {/* Mobile Theme Toggle */}
+          <NavbarMenuItem>
+            <div className="border-t border-slate-600 my-4" />
+            <div className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg">
+              <span className="text-white font-medium">Theme</span>
+              <div className="flex space-x-2">
+                <Button
+                  size="sm"
+                  variant={theme === 'light' ? 'solid' : 'ghost'}
+                  color={theme === 'light' ? 'primary' : 'default'}
+                  isIconOnly
+                  onPress={() => setTheme('light')}
+                >
+                  <Sun className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={theme === 'dark' ? 'solid' : 'ghost'}
+                  color={theme === 'dark' ? 'primary' : 'default'}
+                  isIconOnly
+                  onPress={() => setTheme('dark')}
+                >
+                  <Moon className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={theme === 'system' ? 'solid' : 'ghost'}
+                  color={theme === 'system' ? 'primary' : 'default'}
+                  isIconOnly
+                  onPress={() => setTheme('system')}
+                >
+                  <Monitor className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </NavbarMenuItem>
 
           {/* Mobile Wallet Section */}
           {isConnected && (
@@ -459,7 +508,7 @@ export const Navbar: React.FC = () => {
                   startContent={<LogOut className="w-4 h-4" />}
                   onPress={() => {
                     disconnectWallet();
-                    onMenuClose();
+                    closeMenu();
                   }}
                   className="w-full"
                 >

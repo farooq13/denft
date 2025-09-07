@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
-import { Connection, PublicKey, Transaction } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { 
   ConnectionProvider, 
@@ -11,12 +11,14 @@ import { clusterApiUrl } from '@solana/web3.js';
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
-  TorusWalletAdapter,
   AlphaWalletAdapter,
+  TorusWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
-import { useToaster } from './ToasterContext';
 
-// Enhanced wallet interface with more features
+// Import CSS for wallet adapter
+import '@solana/wallet-adapter-react-ui/styles.css';
+
+// Simple wallet interface
 interface WalletContextType {
   isConnected: boolean;
   walletAddress: string | null;
@@ -29,12 +31,12 @@ interface WalletContextType {
   network: WalletAdapterNetwork;
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
   connectWallet: () => Promise<void>;
-  disconnectWallet: () => void;
-  signTransaction: (transaction: Transaction) => Promise<Transaction>;
+  disconnectWallet: () => Promise<void>;
+  signTransaction: (transaction: Transaction | VersionedTransaction) => Promise<Transaction | VersionedTransaction>;
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   refreshBalance: () => Promise<void>;
-  switchNetwork: (network: WalletAdapterNetwork) => Promise<void>;
   clearError: () => void;
+  showToast: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -47,43 +49,67 @@ interface WalletProviderProps {
 const network = WalletAdapterNetwork.Devnet;
 const endpoint = clusterApiUrl(network);
 
-// Supported wallet adapters with enhanced configuration
+// Supported wallet adapters
 const wallets = [
   new PhantomWalletAdapter(),
   new SolflareWalletAdapter(),
   new AlphaWalletAdapter(),
-  // new TorusWalletAdapter({
-  //   clientId: process.env.REACT_APP_TORUS_CLIENT_ID || 'demo-client-id',
-  // }),
+  new TorusWalletAdapter(),
 ];
 
-// Inner wallet provider component that uses Solana wallet adapter
+// Toast functionality (simple implementation)
+const useToast = () => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info') => {
+    // Simple toast implementation - you can replace with your preferred toast library
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    
+    // Create a simple DOM notification
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-lg text-white font-medium transition-opacity duration-300 ${
+      type === 'success' ? 'bg-green-500' :
+      type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+    }`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => document.body.removeChild(toast), 300);
+    }, 3000);
+  }, []);
+
+  return { showToast };
+};
+
+// Main wallet provider component
 const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
+  // State management
   const [token, setToken] = useState<string | null>(null);
   const [balance, setBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
-  const [currentNetwork, setCurrentNetwork] = useState<WalletAdapterNetwork>(network);
   
-  const { showToast } = useToaster();
-  const solanaWallet = useSolanaWallet();
+  const { showToast } = useToast();
+  
+  // Use Solana wallet adapter
   const {
     wallet,
     publicKey,
     connected,
     connecting,
+    connect,
     disconnect,
-    signTransaction,
-    signMessage,
-  } = solanaWallet;
+    signTransaction: walletSignTransaction,
+    signMessage: walletSignMessage,
+  } = useSolanaWallet();
 
-  // Connection instance for balance and network operations
+  // Solana connection
   const connection = new Connection(endpoint, 'confirmed');
 
   // Update connection status based on wallet state
   useEffect(() => {
-    if (connecting) {
+    if (connecting || isLoading) {
       setConnectionStatus('connecting');
     } else if (connected && publicKey) {
       setConnectionStatus('connected');
@@ -92,13 +118,14 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
     } else {
       setConnectionStatus('disconnected');
     }
-  }, [connecting, connected, publicKey, error]);
+  }, [connecting, connected, publicKey, error, isLoading]);
 
-  // Enhanced wallet connection with authentication
+  // Connect wallet function
   const connectWallet = useCallback(async () => {
     if (!wallet) {
-      setError('No wallet selected. Please install a Solana wallet extension.');
-      showToast('Please install a Solana wallet extension', 'error');
+      const errorMsg = 'Please select a wallet first';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
       return;
     }
 
@@ -106,81 +133,36 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      setConnectionStatus('connecting');
-      
-      // Connect to wallet (this triggers the wallet connection)
-      await wallet.adapter.connect();
+      // Connect to the selected wallet
+      await connect();
       
       if (!publicKey) {
-        throw new Error('Failed to get public key from wallet');
+        throw new Error('Failed to get wallet public key');
       }
 
-      // Create authentication message
-      const authMessage = `Welcome to Denft!\n\nSign this message to authenticate your wallet.\n\nTimestamp: ${Date.now()}\nWallet: ${publicKey.toString()}`;
-      const encodedMessage = new TextEncoder().encode(authMessage);
-
-      // Sign the message for authentication
-      if (!signMessage) {
-        throw new Error('Wallet does not support message signing');
+      // Authenticate with backend (optional)
+      try {
+        await authenticateWallet(publicKey, wallet.adapter.name);
+      } catch (authError) {
+        console.warn('Authentication failed, continuing without backend auth:', authError);
       }
-
-      const signature = await signMessage(encodedMessage);
-
-      // Send authentication request to backend
-      const authResponse = await fetch('/api/auth/wallet-connect', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          walletAddress: publicKey.toString(),
-          signature: Array.from(signature),
-          message: authMessage,
-          walletName: wallet.adapter.name,
-          network: currentNetwork,
-        }),
-      });
-
-      if (!authResponse.ok) {
-        const errorData = await authResponse.json();
-        throw new Error(errorData.error || 'Authentication failed');
-      }
-
-      const authData = await authResponse.json();
-
-      // Store credentials securely
-      const tokenData = {
-        token: authData.token,
-        walletAddress: publicKey.toString(),
-        walletName: wallet.adapter.name,
-        network: currentNetwork,
-        expiresAt: authData.expiresAt,
-      };
-
-      localStorage.setItem('denft-auth', JSON.stringify(tokenData));
-      setToken(authData.token);
       
-      // Fetch initial balance
+      // Get initial balance
       await refreshBalance();
       
-      setConnectionStatus('connected');
       showToast(`Connected to ${wallet.adapter.name}`, 'success');
 
-    } catch (error: any) {
-      console.error('Wallet connection failed:', error);
-      const errorMessage = error.message || 'Failed to connect wallet';
+    } catch (err: any) {
+      console.error('Wallet connection failed:', err);
+      const errorMessage = err.message || 'Failed to connect wallet';
       setError(errorMessage);
-      setConnectionStatus('error');
       showToast(errorMessage, 'error');
-      
-      // Cleanup on error
-      await disconnect();
     } finally {
       setIsLoading(false);
     }
-  }, [wallet, publicKey, signMessage, currentNetwork, showToast, disconnect]);
+  }, [wallet, connect, publicKey, showToast]);
 
-  // Enhanced disconnect with cleanup
+  // Disconnect wallet function
   const disconnectWallet = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -195,106 +177,151 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
               'Content-Type': 'application/json',
             },
           });
-        } catch (error) {
-          console.warn('Failed to logout on backend:', error);
+        } catch (err) {
+          console.warn('Failed to logout on backend:', err);
         }
       }
 
-      // Disconnect wallet
+      // Disconnect from wallet
       await disconnect();
       
       // Clear local state
       setToken(null);
       setBalance(0);
       setError(null);
-      setConnectionStatus('disconnected');
 
-      // Clear storage
+      // Clear localStorage
       localStorage.removeItem('denft-auth');
 
       showToast('Wallet disconnected', 'info');
 
-    } catch (error: any) {
-      console.error('Disconnect error:', error);
+    } catch (err: any) {
+      console.error('Disconnect error:', err);
       showToast('Error disconnecting wallet', 'error');
     } finally {
       setIsLoading(false);
     }
   }, [disconnect, token, showToast]);
 
+  // Authenticate wallet with backend (optional)
+  const authenticateWallet = async (walletPublicKey: PublicKey, walletName: string) => {
+    if (!walletSignMessage) {
+      throw new Error('Wallet does not support message signing');
+    }
+
+    // Create authentication message
+    const authMessage = `Welcome to Denft!\n\nSign this message to authenticate your wallet.\n\nTimestamp: ${Date.now()}\nWallet: ${walletPublicKey.toString()}`;
+    const encodedMessage = new TextEncoder().encode(authMessage);
+
+    // Sign the message
+    const signature = await walletSignMessage(encodedMessage);
+
+    // Send to backend for verification
+    const response = await fetch('/api/auth/wallet-connect', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        walletAddress: walletPublicKey.toString(),
+        signature: Array.from(signature),
+        message: authMessage,
+        walletName,
+        network,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Authentication failed');
+    }
+
+    const authData = await response.json();
+
+    // Store authentication data
+    const tokenData = {
+      token: authData.token,
+      walletAddress: walletPublicKey.toString(),
+      walletName,
+      network,
+      expiresAt: authData.expiresAt,
+    };
+
+    localStorage.setItem('denft-auth', JSON.stringify(tokenData));
+    setToken(authData.token);
+  };
+
+  // Sign transaction
+  const signTransaction = useCallback(async (transaction: Transaction | VersionedTransaction) => {
+    try {
+      setIsLoading(true);
+
+      if (!walletSignTransaction) {
+        throw new Error('Wallet does not support transaction signing');
+      }
+
+      const signedTransaction = await walletSignTransaction(transaction);
+      showToast('Transaction signed successfully', 'success');
+      return signedTransaction;
+
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to sign transaction';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [walletSignTransaction, showToast]);
+
+  // Sign message
+  const signMessage = useCallback(async (message: Uint8Array): Promise<Uint8Array> => {
+    try {
+      setIsLoading(true);
+
+      if (!walletSignMessage) {
+        throw new Error('Wallet does not support message signing');
+      }
+
+      const signature = await walletSignMessage(message);
+      return signature;
+
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to sign message';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [walletSignMessage, showToast]);
+
   // Refresh wallet balance
   const refreshBalance = useCallback(async () => {
     if (!publicKey || !connected) return;
 
     try {
-      const balance = await connection.getBalance(publicKey);
-      setBalance(balance / 1e9); // Convert lamports to SOL
-    } catch (error) {
-      console.error('Failed to fetch balance:', error);
+      const walletBalance = await connection.getBalance(publicKey);
+      setBalance(walletBalance / 1e9); // Convert lamports to SOL
+    } catch (err) {
+      console.error('Failed to fetch balance:', err);
     }
   }, [publicKey, connected, connection]);
 
-  // Switch network functionality
-  const switchNetwork = useCallback(async (newNetwork: WalletAdapterNetwork) => {
-    try {
-      setIsLoading(true);
-      
-      if (connected) {
-        // Disconnect current wallet before switching
-        await disconnectWallet();
-      }
-      
-      setCurrentNetwork(newNetwork);
-      showToast(`Switched to ${newNetwork}`, 'info');
-      
-    } catch (error: any) {
-      setError(error.message || 'Failed to switch network');
-      showToast('Failed to switch network', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [connected, disconnectWallet, showToast]);
+  // Clear error
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
 
-  // Enhanced sign transaction with error handling
-  const signTransactionWrapper = useCallback(async (transaction: Transaction): Promise<Transaction> => {
-    if (!signTransaction) {
-      throw new Error('Wallet does not support transaction signing');
+  // Auto-connect when wallet becomes available
+  useEffect(() => {
+    if (wallet && connected && publicKey && !token) {
+      // If wallet is connected but we don't have auth token, try to authenticate
+      authenticateWallet(publicKey, wallet.adapter.name).catch(err => {
+        console.error('Auto-authentication failed:', err);
+      });
     }
-    
-    try {
-      setIsLoading(true);
-      const signedTransaction = await signTransaction(transaction);
-      showToast('Transaction signed successfully', 'success');
-      return signedTransaction;
-    } catch (error: any) {
-      const errorMessage = error.message || 'Failed to sign transaction';
-      setError(errorMessage);
-      showToast(errorMessage, 'error');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [signTransaction, showToast]);
-
-  // Enhanced sign message with error handling
-  const signMessageWrapper = useCallback(async (message: Uint8Array): Promise<Uint8Array> => {
-    if (!signMessage) {
-      throw new Error('Wallet does not support message signing');
-    }
-    
-    try {
-      setIsLoading(true);
-      const signature = await signMessage(message);
-      return signature;
-    } catch (error: any) {
-      const errorMessage = error.message || 'Failed to sign message';
-      setError(errorMessage);
-      showToast(errorMessage, 'error');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [signMessage, showToast]);
+  }, [wallet, connected, publicKey, token]);
 
   // Check for existing authentication on mount
   useEffect(() => {
@@ -307,29 +334,33 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
           
           // Check if token is not expired
           if (authData.expiresAt && Date.now() < authData.expiresAt) {
-            // Validate token with backend
-            const response = await fetch('/api/auth/validate', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${authData.token}`,
-                'Content-Type': 'application/json'
-              }
-            });
+            // Validate with backend
+            try {
+              const response = await fetch('/api/auth/validate', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${authData.token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
 
-            if (response.ok) {
-              const data = await response.json();
-              if (data.valid) {
-                setToken(authData.token);
-                return;
+              if (response.ok) {
+                const data = await response.json();
+                if (data.valid) {
+                  setToken(authData.token);
+                  return;
+                }
               }
+            } catch (err) {
+              console.warn('Backend validation failed:', err);
             }
           }
           
-          // Invalid or expired token, clear storage
+          // Invalid or expired token
           localStorage.removeItem('denft-auth');
         }
-      } catch (error) {
-        console.error('Failed to check existing auth:', error);
+      } catch (err) {
+        console.error('Failed to check existing auth:', err);
         localStorage.removeItem('denft-auth');
       }
     };
@@ -337,22 +368,26 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
     checkExistingAuth();
   }, []);
 
-  // Refresh balance when wallet connects
+  // Update balance when wallet connects
   useEffect(() => {
     if (connected && publicKey) {
       refreshBalance();
       
-      // Set up periodic balance refresh
+      // Set up balance refresh interval
       const balanceInterval = setInterval(refreshBalance, 30000); // Every 30 seconds
       
       return () => clearInterval(balanceInterval);
     }
   }, [connected, publicKey, refreshBalance]);
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  // Clear error when wallet changes
+  useEffect(() => {
+    if (wallet) {
+      setError(null);
+    }
+  }, [wallet]);
 
+  // Context value
   const value: WalletContextType = {
     isConnected: connected,
     walletAddress: publicKey?.toString() || null,
@@ -362,15 +397,15 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
     isLoading: isLoading || connecting,
     error,
     walletName: wallet?.adapter.name || null,
-    network: currentNetwork,
+    network,
     connectionStatus,
     connectWallet,
     disconnectWallet,
-    signTransaction: signTransactionWrapper,
-    signMessage: signMessageWrapper,
+    signTransaction,
+    signMessage,
     refreshBalance,
-    switchNetwork,
     clearError,
+    showToast,
   };
 
   return (
@@ -380,7 +415,7 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
   );
 };
 
-// Main wallet provider with Solana wallet adapter setup
+// Main wallet provider with all the Solana setup
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   return (
     <ConnectionProvider endpoint={endpoint}>
@@ -395,7 +430,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   );
 };
 
-// Enhanced hook with better error handling
+// Hook to use wallet context
 export const useWallet = (): WalletContextType => {
   const context = useContext(WalletContext);
   if (!context) {
