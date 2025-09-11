@@ -7,7 +7,7 @@ import {
   ModalBody,
   useDisclosure,
   Spinner,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import { 
   Wallet, 
   X,
@@ -73,8 +73,13 @@ export const WalletButton: React.FC = () => {
   const isWalletDetected = (detectionKey: string | null): boolean => {
     if (!detectionKey) return true; // Web-based wallets
     
-    const { solana } = window as any;
-    return !!(solana && solana[detectionKey]);
+    try {
+      const { solana } = window as any;
+      return !!(solana && solana[detectionKey]);
+    } catch (error) {
+      console.warn('Error detecting wallet:', error);
+      return false;
+    }
   };
 
   // Handle wallet selection and connection
@@ -98,11 +103,6 @@ export const WalletButton: React.FC = () => {
       
       // Then connect
       await connect();
-      
-      // Close modal on successful connection
-      if (connected) {
-        onClose();
-      }
       
     } catch (err: any) {
       console.error('Wallet connection failed:', err);
@@ -133,7 +133,7 @@ export const WalletButton: React.FC = () => {
           )
         }
         isLoading={connectionStatus === 'connecting' || connecting}
-        disabled={isLoading || connecting}
+        isDisabled={isLoading || connecting}
       >
         {(connectionStatus === 'connecting' || connecting) ? 'Connecting...' : 'Connect Wallet'}
       </Button>

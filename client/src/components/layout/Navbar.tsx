@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Navbar as NextUINavbar,
+  Navbar as HeroUINavbar,
   NavbarBrand,
   NavbarContent,
   NavbarItem,
@@ -16,7 +16,7 @@ import {
   Avatar,
   Badge,
   Chip,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import {
   Cloud,
   Upload,
@@ -32,6 +32,8 @@ import {
   Monitor,
   Bell,
   Search,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useWallet } from '../../contexts/WalletContext';
 import { useFiles } from '../../contexts/FileContext';
@@ -91,61 +93,70 @@ export const Navbar: React.FC = () => {
     return currentItem?.label || 'Denft';
   };
 
-  // Handle menu toggle
-  const handleMenuToggle = () => {
+  // Handle theme change
+  const handleThemeChange = (newTheme: Theme) => {
+    setTheme(newTheme);
+  };
+
+  // Toggle mobile menu
+  const toggleMobileMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Close menu
-  const closeMenu = () => {
+  // Close mobile menu
+  const closeMobileMenu = () => {
     setIsMenuOpen(false);
   };
 
   return (
     <>
-      <NextUINavbar
-        isBordered
+      <HeroUINavbar
+        isBordered={false}
         isMenuOpen={isMenuOpen}
         onMenuOpenChange={setIsMenuOpen}
+        maxWidth="full"
+        className="bg-transparent backdrop-blur-xl border-b border-blue-500/20"
         classNames={{
-          base: `transition-all duration-300 ${
-            isScrolled 
-              ? 'backdrop-blur-xl bg-slate-900/90 shadow-2xl border-blue-500/30' 
-              : 'backdrop-blur-lg bg-slate-900/70 border-blue-500/20'
-          }`,
-          wrapper: "px-6 max-w-7xl",
+          wrapper: "px-4 sm:px-6 max-w-7xl mx-auto",
           brand: "text-white",
           content: "text-white",
-          menu: "bg-slate-900/95 backdrop-blur-xl border-r border-slate-700 pt-6",
+          item: "text-white",
+          menu: "bg-slate-900/98 backdrop-blur-xl border-r border-slate-700 pt-6",
           menuItem: "text-white",
+          toggle: "text-white",
         }}
         height="4rem"
       >
-        {/* Mobile Menu Toggle */}
+        {/* Mobile Menu Toggle - Only visible on mobile */}
         <NavbarContent className="sm:hidden" justify="start">
-          <NavbarMenuToggle 
+          <Button
+            variant="light"
+            isIconOnly
+            className="text-white hover:text-blue-400 transition-colors p-0 min-w-8 w-8 h-8"
+            onPress={toggleMobileMenu}
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-            className="text-white hover:text-blue-400 transition-colors"
-          />
+          >
+            {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
         </NavbarContent>
 
-        {/* Mobile Brand */}
+        {/* Mobile Brand - Only visible on mobile */}
         <NavbarContent className="sm:hidden pr-3" justify="center">
           <NavbarBrand>
-            <Link to="/" className="flex items-center space-x-2 group">
+            <Link to="/" className="flex items-center space-x-2 group" onClick={closeMobileMenu}>
               <div className="relative">
-                <Cloud className="w-8 h-8 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full animate-pulse" />
+                <Cloud className="w-7 h-7 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
               </div>
-              <span className="font-bold text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="font-bold text-lg bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 Denft
               </span>
             </Link>
           </NavbarBrand>
         </NavbarContent>
 
-        {/* Desktop Navigation */}
-        <NavbarContent className="hidden sm:flex gap-8" justify="center">
+        {/* Desktop Brand and Navigation - Hidden on mobile */}
+        <NavbarContent className="hidden sm:flex gap-8" justify="start">
           <NavbarBrand>
             <Link to="/" className="flex items-center space-x-3 group">
               <div className="relative">
@@ -161,7 +172,7 @@ export const Navbar: React.FC = () => {
             </Link>
           </NavbarBrand>
 
-          {/* Navigation Items */}
+          {/* Desktop Navigation Items */}
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
@@ -188,8 +199,8 @@ export const Navbar: React.FC = () => {
           })}
         </NavbarContent>
 
-        {/* Right Section */}
-        <NavbarContent justify="end" className="gap-4">
+        {/* Right Section - Always visible */}
+        <NavbarContent justify="end" className="gap-2 sm:gap-4">
           {/* Search Bar (desktop only) */}
           <NavbarItem className="hidden lg:flex">
             <div className="relative">
@@ -211,12 +222,12 @@ export const Navbar: React.FC = () => {
 
           {/* Theme Toggle */}
           <NavbarItem>
-            <Dropdown>
+            <Dropdown placement="bottom-end">
               <DropdownTrigger>
                 <Button
-                  variant="ghost"
+                  variant="light"
                   size="sm"
-                  className="text-slate-300 hover:text-white hover:bg-slate-800/50"
+                  className="text-slate-300 hover:text-white hover:bg-slate-800/50 min-w-8 w-8 h-8"
                   isIconOnly
                 >
                   {theme === 'light' && <Sun className="w-4 h-4" />}
@@ -226,10 +237,16 @@ export const Navbar: React.FC = () => {
               </DropdownTrigger>
               <DropdownMenu
                 variant="faded"
-                className="bg-slate-800/90 backdrop-blur-xl border border-slate-700"
-                onAction={(key) => setTheme(key as Theme)}
-                selectedKeys={[theme]}
+                aria-label="Theme selection"
+                className="w-36"
+                selectedKeys={new Set([theme])}
                 selectionMode="single"
+                onSelectionChange={(keys) => {
+                  const selectedTheme = Array.from(keys)[0] as Theme;
+                  if (selectedTheme) {
+                    handleThemeChange(selectedTheme);
+                  }
+                }}
               >
                 <DropdownItem key="light" startContent={<Sun className="w-4 h-4" />}>
                   Light
@@ -248,22 +265,23 @@ export const Navbar: React.FC = () => {
           {isConnected && (
             <NavbarItem>
               <Button
-                variant="ghost"
+                variant="light"
                 size="sm"
-                className="text-slate-300 hover:text-white hover:bg-slate-800/50 relative"
+                className="text-slate-300 hover:text-white hover:bg-slate-800/50 min-w-8 w-8 h-8"
                 isIconOnly
                 onPress={() => navigate('/notifications')}
               >
-                <Bell className="w-4 h-4" />
-                {notifications > 0 && (
-                  <Badge
-                    color="danger"
-                    className="absolute -top-1 -right-1 min-w-5 h-5"
-                    size="sm"
-                  >
-                    {notifications}
-                  </Badge>
-                )}
+                <div className="relative">
+                  <Bell className="w-4 h-4" />
+                  {notifications > 0 && (
+                    <Badge
+                      content={notifications}
+                      color="danger"
+                      size="sm"
+                      className="absolute -top-1 -right-1"
+                    />
+                  )}
+                </div>
               </Button>
             </NavbarItem>
           )}
@@ -271,10 +289,10 @@ export const Navbar: React.FC = () => {
           {/* Wallet Section */}
           <NavbarItem>
             {isConnected ? (
-              <Dropdown>
+              <Dropdown placement="bottom-end">
                 <DropdownTrigger>
-                  <div className="flex items-center space-x-3 cursor-pointer group">
-                    <div className="flex flex-col items-end">
+                  <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer group">
+                    <div className="hidden sm:flex flex-col items-end">
                       <span className="text-sm font-medium text-white">
                         {balance.toFixed(4)} SOL
                       </span>
@@ -288,13 +306,14 @@ export const Navbar: React.FC = () => {
                         src={`https://ui-avatars.com/api/?name=${walletName}&background=3B82F6&color=fff`}
                         className="ring-2 ring-blue-500/30 group-hover:ring-blue-400/50 transition-all duration-300"
                       />
-                      <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900" />
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900" />
                     </div>
                   </div>
                 </DropdownTrigger>
                 <DropdownMenu
                   variant="faded"
-                  className="w-64 bg-slate-800/95 backdrop-blur-xl border border-slate-700"
+                  aria-label="Profile actions"
+                  className="w-64"
                 >
                   <DropdownItem
                     key="wallet-info"
@@ -302,14 +321,14 @@ export const Navbar: React.FC = () => {
                     textValue="Wallet Info"
                   >
                     <div className="flex flex-col">
-                      <p className="font-semibold text-white">{walletName}</p>
+                      <p className="font-semibold text-foreground">{walletName}</p>
                       <div className="flex items-center space-x-2">
-                        <p className="text-small text-slate-400 font-mono">
+                        <p className="text-small text-default-500 font-mono">
                           {formatWalletAddress(walletAddress!)}
                         </p>
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="light"
                           isIconOnly
                           className="w-6 h-6 min-w-6"
                           onPress={copyWalletAddress}
@@ -326,7 +345,7 @@ export const Navbar: React.FC = () => {
                     textValue="Balance"
                   >
                     <div className="flex justify-between items-center w-full">
-                      <span className="text-slate-300">Balance</span>
+                      <span className="text-default-600">Balance</span>
                       <Chip size="sm" variant="flat" color="primary">
                         {balance.toFixed(4)} SOL
                       </Chip>
@@ -339,7 +358,7 @@ export const Navbar: React.FC = () => {
                     textValue="Storage"
                   >
                     <div className="flex justify-between items-center w-full">
-                      <span className="text-slate-300">Files Stored</span>
+                      <span className="text-default-600">Files Stored</span>
                       <Chip size="sm" variant="flat" color="secondary">
                         {files.length}
                       </Chip>
@@ -347,7 +366,7 @@ export const Navbar: React.FC = () => {
                   </DropdownItem>
 
                   <DropdownItem key="divider" className="p-0">
-                    <div className="border-t border-slate-600 my-1" />
+                    <div className="border-t border-divider my-1" />
                   </DropdownItem>
 
                   <DropdownItem
@@ -382,10 +401,17 @@ export const Navbar: React.FC = () => {
           </NavbarItem>
         </NavbarContent>
 
+        {/* Mobile Menu Overlay */}
+        {isMenuOpen && (
+          <div className="fixed inset-0 bg-black/50 z-40 sm:hidden" onClick={closeMobileMenu} />
+        )}
+
         {/* Mobile Menu */}
-        <NavbarMenu>
-          {/* Mobile Search */}
-          <NavbarMenuItem>
+        <div className={`fixed top-0 left-0 h-full w-80 bg-slate-900/98 backdrop-blur-xl border-r border-slate-700 transform transition-transform duration-300 z-50 sm:hidden ${
+          isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
+          <div className="flex flex-col h-full pt-20 px-6">
+            {/* Mobile Search */}
             <div className="relative w-full mb-6">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -397,83 +423,77 @@ export const Navbar: React.FC = () => {
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' && searchQuery.trim()) {
                     navigate(`/files?search=${encodeURIComponent(searchQuery)}`);
-                    closeMenu();
+                    closeMobileMenu();
                   }
                 }}
               />
             </div>
-          </NavbarMenuItem>
 
-          {/* Mobile Navigation Items */}
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.href;
+            {/* Mobile Navigation Items */}
+            <div className="space-y-2 mb-6">
+              {navItems.map((item, index) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.href;
 
-            if (item.protected && !isConnected) return null;
+                if (item.protected && !isConnected) return null;
 
-            return (
-              <NavbarMenuItem key={item.href}>
-                <Link
-                  to={item.href}
-                  onClick={closeMenu}
-                  className={`flex items-center space-x-3 w-full p-4 rounded-lg transition-all duration-300 ${
-                    isActive
-                      ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white border border-blue-500/30'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : ''}`} />
-                  <span className="font-medium">{item.label}</span>
-                </Link>
-              </NavbarMenuItem>
-            );
-          })}
+                return (
+                  <Link
+                    key={`${item.href}-${index}`}
+                    to={item.href}
+                    onClick={closeMobileMenu}
+                    className={`flex items-center space-x-3 w-full p-4 rounded-lg transition-all duration-300 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white border border-blue-500/30'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : ''}`} />
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
 
-          {/* Mobile Theme Toggle */}
-          <NavbarMenuItem>
-            <div className="border-t border-slate-600 my-4" />
-            <div className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg">
-              <span className="text-white font-medium">Theme</span>
-              <div className="flex space-x-2">
-                <Button
-                  size="sm"
-                  variant={theme === 'light' ? 'solid' : 'ghost'}
-                  color={theme === 'light' ? 'primary' : 'default'}
-                  isIconOnly
-                  onPress={() => setTheme('light')}
-                >
-                  <Sun className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant={theme === 'dark' ? 'solid' : 'ghost'}
-                  color={theme === 'dark' ? 'primary' : 'default'}
-                  isIconOnly
-                  onPress={() => setTheme('dark')}
-                >
-                  <Moon className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant={theme === 'system' ? 'solid' : 'ghost'}
-                  color={theme === 'system' ? 'primary' : 'default'}
-                  isIconOnly
-                  onPress={() => setTheme('system')}
-                >
-                  <Monitor className="w-4 h-4" />
-                </Button>
+            {/* Mobile Theme Toggle */}
+            <div className="border-t border-slate-600 pt-4 mb-6">
+              <div className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg">
+                <span className="text-white font-medium">Theme</span>
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant={theme === 'light' ? 'solid' : 'light'}
+                    color={theme === 'light' ? 'primary' : 'default'}
+                    isIconOnly
+                    onPress={() => handleThemeChange('light')}
+                  >
+                    <Sun className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={theme === 'dark' ? 'solid' : 'light'}
+                    color={theme === 'dark' ? 'primary' : 'default'}
+                    isIconOnly
+                    onPress={() => handleThemeChange('dark')}
+                  >
+                    <Moon className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={theme === 'system' ? 'solid' : 'light'}
+                    color={theme === 'system' ? 'primary' : 'default'}
+                    isIconOnly
+                    onPress={() => handleThemeChange('system')}
+                  >
+                    <Monitor className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-          </NavbarMenuItem>
 
-          {/* Mobile Wallet Section */}
-          {isConnected && (
-            <>
-              <NavbarMenuItem>
-                <div className="border-t border-slate-600 my-4" />
-              </NavbarMenuItem>
-              
-              <NavbarMenuItem>
+            {/* Mobile Wallet Section */}
+            {isConnected ? (
+              <div className="border-t border-slate-600 pt-4 space-y-4">
                 <div className="flex items-center space-x-3 p-4 bg-slate-800/30 rounded-lg">
                   <Avatar
                     size="md"
@@ -488,7 +508,7 @@ export const Navbar: React.FC = () => {
                       </p>
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="light"
                         isIconOnly
                         className="w-6 h-6 min-w-6"
                         onPress={copyWalletAddress}
@@ -499,29 +519,31 @@ export const Navbar: React.FC = () => {
                     <p className="text-sm text-blue-400">{balance.toFixed(4)} SOL</p>
                   </div>
                 </div>
-              </NavbarMenuItem>
 
-              <NavbarMenuItem>
                 <Button
                   color="danger"
                   variant="flat"
                   startContent={<LogOut className="w-4 h-4" />}
                   onPress={() => {
                     disconnectWallet();
-                    closeMenu();
+                    closeMobileMenu();
                   }}
                   className="w-full"
                 >
                   Disconnect Wallet
                 </Button>
-              </NavbarMenuItem>
-            </>
-          )}
-        </NavbarMenu>
-      </NextUINavbar>
+              </div>
+            ) : (
+              <div className="border-t border-slate-600 pt-4">
+                <WalletButton />
+              </div>
+            )}
+          </div>
+        </div>
+      </HeroUINavbar>
 
       {/* Page Title Banner (visible on mobile) */}
-      <div className="sm:hidden bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-b border-blue-500/20 px-6 py-3">
+      <div className="block sm:hidden bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-b border-blue-500/20 px-6 py-3">
         <h1 className="text-lg font-semibold text-white">
           {getCurrentPageTitle()}
         </h1>
