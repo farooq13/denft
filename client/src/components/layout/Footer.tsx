@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Divider } from '@nextui-org/react';
+import { Button, Divider } from '@heroui/react';
 import {
   Cloud,
   Twitter,
@@ -80,8 +80,8 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Footer Links */}
-          <div className='grid grid-cols-2 gap-8'>
-              <div>
+          <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-8">
+            <div>
               <h3 className="font-semibold text-white mb-4">Product</h3>
               <ul className="space-y-3">
                 {footerLinks.product.map((link, index) => (
@@ -146,7 +146,6 @@ export const Footer: React.FC = () => {
             <p className="text-slate-400 text-sm">
               © {currentYear} Denft. All rights reserved.
             </p>
-           
           </div>
         </div>
       </div>

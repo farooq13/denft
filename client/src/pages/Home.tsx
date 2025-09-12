@@ -5,7 +5,7 @@ import {
   Card,
   CardBody,
   Chip,
-} from '@nextui-org/react';
+} from '@heroui/react';
 import {
   Cloud,
   Shield,
@@ -31,7 +31,6 @@ import { useFiles } from '../contexts/FileContext';
 
 // Feature cards data
 const features = [
-  
   {
     icon: Zap,
     title: 'Lightning Fast',
@@ -80,11 +79,9 @@ const supportedTypes = [
 ];
 
 export const Home: React.FC = () => {
-   
   const navigate = useNavigate();
   const { isConnected, connectWallet, isLoading } = useWallet();
   const { publicFiles } = useFiles();
-  
   
   const [animationStep, setAnimationStep] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -133,16 +130,19 @@ export const Home: React.FC = () => {
   }, []);
 
   const handleGetStarted = async () => {
-    if (isConnected) {
-      navigate('/dashboard');
-    } else {
-      await connectWallet();
+    try {
+      if (isConnected) {
+        navigate('/dashboard');
+      } else {
+        await connectWallet();
+      }
+    } catch (error) {
+      console.error('Error in handleGetStarted:', error);
     }
   };
 
   return (
     <div className="relative overflow-hidden">
-    
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center justify-center text-center px-4">
         {/* Interactive mouse follower */}
@@ -157,8 +157,6 @@ export const Home: React.FC = () => {
         <div className="max-w-6xl mx-auto relative z-10">
           {/* Main hero content */}
           <div className={`transition-all duration-1000 ${animationStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-           
-
             {/* Subtitle */}
             <p className="text-xl md:text-2xl text-slate-300 mb-8 max-w-3xl mx-auto leading-relaxed font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">
               Secure file storage {' '}
@@ -193,7 +191,7 @@ export const Home: React.FC = () => {
       {/* Statistics Section */}
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="grid sgrid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => {
               const Icon = stat.icon;
               const animatedValue = useAnimatedCounter(
@@ -239,7 +237,7 @@ export const Home: React.FC = () => {
           </div>
 
           {/* Features grid */}
-          <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {features.map((feature, index) => {
               const Icon = feature.icon;
               
@@ -316,8 +314,6 @@ export const Home: React.FC = () => {
                 color: 'from-pink-500 to-red-500',
               },
             ].map((step, index) => {
-             
-              
               return (
                 <div key={step.step} className="relative text-center group">
                   {/* Step number */}
@@ -337,57 +333,8 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Supported File Types */}
-      {/* <section className="py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Support for{' '}
-              <span className="bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-                All File Types
-              </span>
-            </h2>
-            <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-              Upload and secure any type of file with blockchain verification
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-8">
-            {supportedTypes.map((type, index) => {
-              const Icon = type.icon;
-              
-              return (
-                <Card
-                  key={type.label}
-                  className="group border border-slate-700 bg-slate-800/30 backdrop-blur-xl hover:border-slate-600 hover:bg-slate-800/50 transition-all duration-300 hover:scale-105"
-                >
-                  <CardBody className="p-6 text-center">
-                    <div className="inline-flex p-4 bg-gradient-to-r from-slate-700 to-slate-600 rounded-xl mb-4 group-hover:from-blue-600/20 group-hover:to-purple-600/20 transition-all duration-300">
-                      <Icon className="w-8 h-8 text-slate-300 group-hover:text-blue-400 transition-colors duration-300" />
-                    </div>
-                    <h3 className="font-semibold text-white mb-3">{type.label}</h3>
-                    <div className="flex flex-wrap gap-1 justify-center">
-                      {type.types.map((fileType) => (
-                        <Chip
-                          key={fileType}
-                          size="sm"
-                          variant="flat"
-                          className="text-xs bg-slate-700/50 text-slate-300"
-                        >
-                          {fileType}
-                        </Chip>
-                      ))}
-                    </div>
-                  </CardBody>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </section> */}
-
       {/* Recent Public Files */}
-      {publicFiles.length > 0 && (
+      {publicFiles && publicFiles.length > 0 && (
         <section className="py-20 bg-gradient-to-b from-slate-800/30 to-slate-900/30">
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex items-center justify-between mb-12">
@@ -486,9 +433,6 @@ export const Home: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* Demo Modal */}
-      
     </div>
   );
 };

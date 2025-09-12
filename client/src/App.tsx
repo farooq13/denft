@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { NextUIProvider } from '@nextui-org/react';
+import { HeroUIProvider } from '@heroui/react';
 import { WalletProvider } from './contexts/WalletContext';
 import { FileProvider } from './contexts/FileContext';
 import { ToasterProvider } from './contexts/ToasterContext';
@@ -68,7 +68,7 @@ function App() {
   }
 
   return (
-    <NextUIProvider>
+    <HeroUIProvider>
       <ThemeProvider>
         <ToasterProvider>
           <WalletProvider>
@@ -83,7 +83,7 @@ function App() {
                   {/* Main app structure with glassmorphism effect */}
                   <div className="relative z-10 min-h-screen backdrop-blur-sm">
                     {/* Enhanced navbar with blur effect */}
-                    <div className="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-blue-500/20">
+                    <div className="sticky top-0 z-50">
                       <Navbar />
                     </div>
                     
@@ -149,7 +149,7 @@ function App() {
           </WalletProvider>
         </ToasterProvider>
       </ThemeProvider>
-    </NextUIProvider>
+    </HeroUIProvider>
   );
 }
 
