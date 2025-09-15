@@ -5,16 +5,12 @@ import {
   NavbarBrand,
   NavbarContent,
   NavbarItem,
-  NavbarMenuToggle,
-  NavbarMenu,
-  NavbarMenuItem,
   Button,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
   Avatar,
-  Badge,
   Chip,
 } from '@heroui/react';
 import {
@@ -53,7 +49,7 @@ export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications] = useState(3); // Mock notification count
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Handle scroll effect for navbar styling
   useEffect(() => {
@@ -93,124 +89,171 @@ export const Navbar: React.FC = () => {
     return currentItem?.label || 'Denft';
   };
 
-  // Handle theme change
+  // Handle theme change - moved logic to apply globally
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme);
   };
 
+  // Apply theme globally on component mount and theme change
+  useEffect(() => {
+    const applyTheme = (themeToApply: Theme) => {
+      // Remove existing theme classes
+      document.documentElement.classList.remove('light', 'dark');
+      
+      if (themeToApply === 'light') {
+        document.documentElement.classList.add('light');
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.body.style.backgroundColor = '#ffffff';
+        document.body.style.color = '#1e293b';
+      } else if (themeToApply === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.body.style.backgroundColor = '#0f172a';
+        document.body.style.color = '#ffffff';
+      } else {
+        // System theme
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.classList.add(systemTheme);
+        document.documentElement.setAttribute('data-theme', systemTheme);
+        if (systemTheme === 'dark') {
+          document.body.style.backgroundColor = '#0f172a';
+          document.body.style.color = '#ffffff';
+        } else {
+          document.body.style.backgroundColor = '#ffffff';
+          document.body.style.color = '#1e293b';
+        }
+      }
+    };
+
+    applyTheme(theme);
+
+    // Listen for system theme changes when theme is 'system'
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => applyTheme('system');
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, [theme]);
+
   // Toggle mobile menu
   const toggleMobileMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+    setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
   // Close mobile menu
   const closeMobileMenu = () => {
-    setIsMenuOpen(false);
+    setIsMobileMenuOpen(false);
   };
 
   return (
     <>
       <HeroUINavbar
         isBordered={false}
-        isMenuOpen={isMenuOpen}
-        onMenuOpenChange={setIsMenuOpen}
         maxWidth="full"
-        className="bg-transparent backdrop-blur-xl border-b border-blue-500/20"
+        className={`transition-all duration-300 ${
+          isScrolled 
+            ? 'bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50 shadow-lg' 
+            : theme === 'light' 
+              ? 'bg-white/95 backdrop-blur-xl border-b border-slate-200/50' 
+              : 'bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50'
+        }`}
         classNames={{
           wrapper: "px-4 sm:px-6 max-w-7xl mx-auto",
-          brand: "text-white",
-          content: "text-white",
-          item: "text-white",
-          menu: "bg-slate-900/98 backdrop-blur-xl border-r border-slate-700 pt-6",
-          menuItem: "text-white",
-          toggle: "text-white",
+          brand: theme === 'light' ? "text-slate-900" : "text-white",
+          content: theme === 'light' ? "text-slate-900" : "text-white",
+          item: theme === 'light' ? "text-slate-900" : "text-white",
         }}
         height="4rem"
       >
-        {/* Mobile Menu Toggle - Only visible on mobile */}
-        <NavbarContent className="sm:hidden" justify="start">
-          <Button
-            variant="light"
-            isIconOnly
-            className="text-white hover:text-blue-400 transition-colors p-0 min-w-8 w-8 h-8"
-            onPress={toggleMobileMenu}
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          >
-            {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
-        </NavbarContent>
+        {/* Left Section - Brand and Navigation */}
+        <NavbarContent className="gap-2" justify="start">
+          {/* Mobile Menu Toggle - Only visible on mobile */}
+          <div className="md:hidden">
+            <Button
+              variant="light"
+              isIconOnly
+              className={`${
+                theme === 'light' ? 'text-slate-900 hover:text-blue-600' : 'text-white hover:text-blue-400'
+              } transition-colors p-0 min-w-8 w-8 h-8`}
+              onPress={toggleMobileMenu}
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
 
-        {/* Mobile Brand - Only visible on mobile */}
-        <NavbarContent className="sm:hidden pr-3" justify="center">
-          <NavbarBrand>
-            <Link to="/" className="flex items-center space-x-2 group" onClick={closeMobileMenu}>
+          {/* Brand - Always visible */}
+          <NavbarBrand className="mr-4 sm:mr-8">
+            <Link to="/" className="flex items-center space-x-2 sm:space-x-3 group" onClick={closeMobileMenu}>
               <div className="relative">
-                <Cloud className="w-7 h-7 text-blue-400 group-hover:text-blue-300 transition-colors duration-300" />
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-              </div>
-              <span className="font-bold text-lg bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Denft
-              </span>
-            </Link>
-          </NavbarBrand>
-        </NavbarContent>
-
-        {/* Desktop Brand and Navigation - Hidden on mobile */}
-        <NavbarContent className="hidden sm:flex gap-8" justify="start">
-          <NavbarBrand>
-            <Link to="/" className="flex items-center space-x-3 group">
-              <div className="relative">
-                <Cloud className="w-10 h-10 text-blue-400 group-hover:text-blue-300 transition-all duration-300 group-hover:scale-110" />
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse" />
+                <Cloud className="w-7 sm:w-10 h-7 sm:h-10 text-blue-400 group-hover:text-blue-300 transition-all duration-300 group-hover:scale-110" />
+                <div className="absolute -top-1 -right-1 w-2 sm:w-4 h-2 sm:h-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse" />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-2xl bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <span className="font-bold text-lg sm:text-2xl bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                   Denft
                 </span>
-                <span className="text-xs text-slate-400 -mt-1">Decentralized Storage</span>
+                <span className={`text-xs -mt-1 hidden sm:block ${theme === 'light' ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Decentralized Storage
+                </span>
               </div>
             </Link>
           </NavbarBrand>
 
-          {/* Desktop Navigation Items */}
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.href;
+          {/* Desktop Navigation Items - Hidden on mobile */}
+          <div className="hidden md:flex gap-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.href;
 
-            if (item.protected && !isConnected) return null;
+              if (item.protected && !isConnected) return null;
 
-            return (
-              <NavbarItem key={item.href} isActive={isActive}>
-                <Link
-                  to={item.href}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 group ${
-                    isActive
-                      ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white border border-blue-500/30'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 transition-all duration-300 ${
-                    isActive ? 'text-blue-400' : 'group-hover:text-blue-400'
-                  }`} />
-                  <span className="font-medium">{item.label}</span>
-                </Link>
-              </NavbarItem>
-            );
-          })}
+              return (
+                <NavbarItem key={item.href} isActive={isActive}>
+                  <Link
+                    to={item.href}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 group ${
+                      isActive
+                        ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30'
+                        : theme === 'light'
+                          ? 'text-slate-700 hover:text-blue-600 hover:bg-slate-100'
+                          : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                    } ${
+                      isActive 
+                        ? theme === 'light' ? 'text-blue-600' : 'text-white'
+                        : ''
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 transition-all duration-300 ${
+                      isActive ? 'text-blue-400' : 'group-hover:text-blue-400'
+                    }`} />
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                </NavbarItem>
+              );
+            })}
+          </div>
         </NavbarContent>
 
-        {/* Right Section - Always visible */}
+        {/* Right Section - Search, Theme, Notifications, Wallet */}
         <NavbarContent justify="end" className="gap-2 sm:gap-4">
           {/* Search Bar (desktop only) */}
           <NavbarItem className="hidden lg:flex">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
+                theme === 'light' ? 'text-slate-400' : 'text-slate-400'
+              }`} />
               <input
                 type="text"
                 placeholder="Search files..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 w-64 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                className={`pl-10 pr-4 py-2 w-64 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
+                  theme === 'light'
+                    ? 'bg-slate-100 border-slate-200 text-slate-900 placeholder-slate-500'
+                    : 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400'
+                }`}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' && searchQuery.trim()) {
                     navigate(`/files?search=${encodeURIComponent(searchQuery)}`);
@@ -227,7 +270,11 @@ export const Navbar: React.FC = () => {
                 <Button
                   variant="light"
                   size="sm"
-                  className="text-slate-300 hover:text-white hover:bg-slate-800/50 min-w-8 w-8 h-8"
+                  className={`min-w-8 w-8 h-8 ${
+                    theme === 'light' 
+                      ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100' 
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  }`}
                   isIconOnly
                 >
                   {theme === 'light' && <Sun className="w-4 h-4" />}
@@ -267,21 +314,20 @@ export const Navbar: React.FC = () => {
               <Button
                 variant="light"
                 size="sm"
-                className="text-slate-300 hover:text-white hover:bg-slate-800/50 min-w-8 w-8 h-8"
+                className={`min-w-8 w-8 h-8 relative ${
+                  theme === 'light' 
+                    ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100' 
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                }`}
                 isIconOnly
                 onPress={() => navigate('/notifications')}
               >
-                <div className="relative">
-                  <Bell className="w-4 h-4" />
-                  {notifications > 0 && (
-                    <Badge
-                      content={notifications}
-                      color="danger"
-                      size="sm"
-                      className="absolute -top-1 -right-1"
-                    />
-                  )}
-                </div>
+                <Bell className="w-4 h-4" />
+                {notifications > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {notifications}
+                  </span>
+                )}
               </Button>
             </NavbarItem>
           )}
@@ -293,10 +339,14 @@ export const Navbar: React.FC = () => {
                 <DropdownTrigger>
                   <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer group">
                     <div className="hidden sm:flex flex-col items-end">
-                      <span className="text-sm font-medium text-white">
+                      <span className={`text-sm font-medium ${
+                        theme === 'light' ? 'text-slate-900' : 'text-white'
+                      }`}>
                         {balance.toFixed(4)} SOL
                       </span>
-                      <span className="text-xs text-slate-400">
+                      <span className={`text-xs ${
+                        theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+                      }`}>
                         {formatWalletAddress(walletAddress!)}
                       </span>
                     </div>
@@ -400,151 +450,189 @@ export const Navbar: React.FC = () => {
             )}
           </NavbarItem>
         </NavbarContent>
-
-        {/* Mobile Menu Overlay */}
-        {isMenuOpen && (
-          <div className="fixed inset-0 bg-black/50 z-40 sm:hidden" onClick={closeMobileMenu} />
-        )}
-
-        {/* Mobile Menu */}
-        <div className={`fixed top-0 left-0 h-full w-80 bg-slate-900/98 backdrop-blur-xl border-r border-slate-700 transform transition-transform duration-300 z-50 sm:hidden ${
-          isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}>
-          <div className="flex flex-col h-full pt-20 px-6">
-            {/* Mobile Search */}
-            <div className="relative w-full mb-6">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search files..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-3 w-full bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && searchQuery.trim()) {
-                    navigate(`/files?search=${encodeURIComponent(searchQuery)}`);
-                    closeMobileMenu();
-                  }
-                }}
-              />
-            </div>
-
-            {/* Mobile Navigation Items */}
-            <div className="space-y-2 mb-6">
-              {navItems.map((item, index) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-
-                if (item.protected && !isConnected) return null;
-
-                return (
-                  <Link
-                    key={`${item.href}-${index}`}
-                    to={item.href}
-                    onClick={closeMobileMenu}
-                    className={`flex items-center space-x-3 w-full p-4 rounded-lg transition-all duration-300 ${
-                      isActive
-                        ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white border border-blue-500/30'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-                    }`}
-                  >
-                    <Icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : ''}`} />
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {/* Mobile Theme Toggle */}
-            <div className="border-t border-slate-600 pt-4 mb-6">
-              <div className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg">
-                <span className="text-white font-medium">Theme</span>
-                <div className="flex space-x-2">
-                  <Button
-                    size="sm"
-                    variant={theme === 'light' ? 'solid' : 'light'}
-                    color={theme === 'light' ? 'primary' : 'default'}
-                    isIconOnly
-                    onPress={() => handleThemeChange('light')}
-                  >
-                    <Sun className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={theme === 'dark' ? 'solid' : 'light'}
-                    color={theme === 'dark' ? 'primary' : 'default'}
-                    isIconOnly
-                    onPress={() => handleThemeChange('dark')}
-                  >
-                    <Moon className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={theme === 'system' ? 'solid' : 'light'}
-                    color={theme === 'system' ? 'primary' : 'default'}
-                    isIconOnly
-                    onPress={() => handleThemeChange('system')}
-                  >
-                    <Monitor className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile Wallet Section */}
-            {isConnected ? (
-              <div className="border-t border-slate-600 pt-4 space-y-4">
-                <div className="flex items-center space-x-3 p-4 bg-slate-800/30 rounded-lg">
-                  <Avatar
-                    size="md"
-                    src={`https://ui-avatars.com/api/?name=${walletName}&background=3B82F6&color=fff`}
-                    className="ring-2 ring-blue-500/30"
-                  />
-                  <div className="flex-1">
-                    <p className="font-semibold text-white">{walletName}</p>
-                    <div className="flex items-center space-x-2">
-                      <p className="text-sm text-slate-400 font-mono">
-                        {formatWalletAddress(walletAddress!)}
-                      </p>
-                      <Button
-                        size="sm"
-                        variant="light"
-                        isIconOnly
-                        className="w-6 h-6 min-w-6"
-                        onPress={copyWalletAddress}
-                      >
-                        <Copy className="w-3 h-3" />
-                      </Button>
-                    </div>
-                    <p className="text-sm text-blue-400">{balance.toFixed(4)} SOL</p>
-                  </div>
-                </div>
-
-                <Button
-                  color="danger"
-                  variant="flat"
-                  startContent={<LogOut className="w-4 h-4" />}
-                  onPress={() => {
-                    disconnectWallet();
-                    closeMobileMenu();
-                  }}
-                  className="w-full"
-                >
-                  Disconnect Wallet
-                </Button>
-              </div>
-            ) : (
-              <div className="border-t border-slate-600 pt-4">
-                <WalletButton />
-              </div>
-            )}
-          </div>
-        </div>
       </HeroUINavbar>
 
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={closeMobileMenu} />
+      )}
+
+      {/* Mobile Menu */}
+      <div className={`fixed top-0 left-0 h-full w-80 backdrop-blur-xl border-r transform transition-transform duration-300 z-50 md:hidden ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      } ${
+        theme === 'light' 
+          ? 'bg-white/98 border-slate-200 text-slate-900' 
+          : 'bg-slate-900/98 border-slate-700 text-white'
+      }`}>
+        <div className="flex flex-col h-full pt-20 px-6">
+          {/* Mobile Search */}
+          <div className="relative w-full mb-6">
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
+              theme === 'light' ? 'text-slate-400' : 'text-slate-400'
+            }`} />
+            <input
+              type="text"
+              placeholder="Search files..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`pl-10 pr-4 py-3 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                theme === 'light'
+                  ? 'bg-slate-100 border-slate-200 text-slate-900 placeholder-slate-500'
+                  : 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400'
+              }`}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  navigate(`/files?search=${encodeURIComponent(searchQuery)}`);
+                  closeMobileMenu();
+                }
+              }}
+            />
+          </div>
+
+          {/* Mobile Navigation Items */}
+          <div className="space-y-2 mb-6">
+            {navItems.map((item, index) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.href;
+
+              if (item.protected && !isConnected) return null;
+
+              return (
+                <Link
+                  key={`${item.href}-${index}`}
+                  to={item.href}
+                  onClick={closeMobileMenu}
+                  className={`flex items-center space-x-3 w-full p-4 rounded-lg transition-all duration-300 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30'
+                      : theme === 'light'
+                        ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                  } ${
+                    isActive 
+                      ? theme === 'light' ? 'text-blue-600' : 'text-white'
+                      : ''
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : ''}`} />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Mobile Theme Toggle */}
+          <div className={`border-t pt-4 mb-6 ${
+            theme === 'light' ? 'border-slate-200' : 'border-slate-600'
+          }`}>
+            <div className={`flex items-center justify-between p-4 rounded-lg ${
+              theme === 'light' ? 'bg-slate-100' : 'bg-slate-800/30'
+            }`}>
+              <span className={`font-medium ${
+                theme === 'light' ? 'text-slate-900' : 'text-white'
+              }`}>Theme</span>
+              <div className="flex space-x-2">
+                <Button
+                  size="sm"
+                  variant={theme === 'light' ? 'solid' : 'light'}
+                  color={theme === 'light' ? 'primary' : 'default'}
+                  isIconOnly
+                  onPress={() => handleThemeChange('light')}
+                >
+                  <Sun className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={theme === 'dark' ? 'solid' : 'light'}
+                  color={theme === 'dark' ? 'primary' : 'default'}
+                  isIconOnly
+                  onPress={() => handleThemeChange('dark')}
+                >
+                  <Moon className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={theme === 'system' ? 'solid' : 'light'}
+                  color={theme === 'system' ? 'primary' : 'default'}
+                  isIconOnly
+                  onPress={() => handleThemeChange('system')}
+                >
+                  <Monitor className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Wallet Section */}
+          {isConnected ? (
+            <div className={`border-t pt-4 space-y-4 ${
+              theme === 'light' ? 'border-slate-200' : 'border-slate-600'
+            }`}>
+              <div className={`flex items-center space-x-3 p-4 rounded-lg ${
+                theme === 'light' ? 'bg-slate-100' : 'bg-slate-800/30'
+              }`}>
+                <Avatar
+                  size="md"
+                  src={`https://ui-avatars.com/api/?name=${walletName}&background=3B82F6&color=fff`}
+                  className="ring-2 ring-blue-500/30"
+                />
+                <div className="flex-1">
+                  <p className={`font-semibold ${
+                    theme === 'light' ? 'text-slate-900' : 'text-white'
+                  }`}>{walletName}</p>
+                  <div className="flex items-center space-x-2">
+                    <p className={`text-sm font-mono ${
+                      theme === 'light' ? 'text-slate-600' : 'text-slate-400'
+                    }`}>
+                      {formatWalletAddress(walletAddress!)}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="light"
+                      isIconOnly
+                      className="w-6 h-6 min-w-6"
+                      onPress={copyWalletAddress}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-blue-400">{balance.toFixed(4)} SOL</p>
+                </div>
+              </div>
+
+              <Button
+                color="danger"
+                variant="flat"
+                startContent={<LogOut className="w-4 h-4" />}
+                onPress={() => {
+                  disconnectWallet();
+                  closeMobileMenu();
+                }}
+                className="w-full"
+              >
+                Disconnect Wallet
+              </Button>
+            </div>
+          ) : (
+            <div className={`border-t pt-4 ${
+              theme === 'light' ? 'border-slate-200' : 'border-slate-600'
+            }`}>
+              <WalletButton />
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Page Title Banner (visible on mobile) */}
-      <div className="block sm:hidden bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-b border-blue-500/20 px-6 py-3">
-        <h1 className="text-lg font-semibold text-white">
+      <div className={`block md:hidden border-b px-6 py-3 ${
+        theme === 'light'
+          ? 'bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-slate-200/50'
+          : 'bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-blue-500/20'
+      }`}>
+        <h1 className={`text-lg font-semibold ${
+          theme === 'light' ? 'text-slate-900' : 'text-white'
+        }`}>
           {getCurrentPageTitle()}
         </h1>
       </div>
