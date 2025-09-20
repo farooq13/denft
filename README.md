@@ -41,28 +41,6 @@ Denft is a decentralized cloud storage platform that combines the familiar user 
 
 
 
-### Core Components
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Web Frontend  │    │   API Backend   │    │ Solana Program  │
-│                 │◄──►│                 │◄──►│                 │
-│ • File Upload   │    │ • Authentication│    │ • File Records  │
-│ • Verification  │    │ • Encryption    │    │ • Access Control│
-│ • Access Mgmt   │    │ • IPFS Gateway  │    │ • Verification  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                        │                        │
-         └────────────────────────┼────────────────────────┘
-                                  │
-                          ┌─────────────────┐
-                          │ IPFS Network    │
-                          │                 │
-                          │ • File Storage  │
-                          │ • Distributed   │
-                          │ • Content Hash  │
-                          └─────────────────┘
-```
-
-
 
 ## File Structure
 ```
