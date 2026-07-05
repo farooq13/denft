@@ -1,1 +1,2 @@
-@import "tailwindcss";
+/* Denft — Entry CSS: imports the full design system */
+@import './styles/globals.css';
