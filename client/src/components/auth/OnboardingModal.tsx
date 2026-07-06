@@ -1,8 +1,8 @@
 // src/components/auth/OnboardingModal.tsx
 // Sprint 2 — First-time onboarding flow. Shown only once when a user connects their wallet.
 
-import React, { useState, useEffect, useRef } from 'react'
-import { Shield, Upload, Share2, Check, ArrowRight, X } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Shield, Upload, Share2, Check, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/cn'
 

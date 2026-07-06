@@ -2,8 +2,8 @@
 // Sprint 2 — Refactored WalletButton to use the standalone WalletConnectModal.
 // Removed all HeroUI dependencies.
 
-import React, { useState } from 'react'
-import { Wallet, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { Wallet } from 'lucide-react'
 import { useWallet } from '@/contexts/WalletContext'
 import { useWallet as useSolanaWallet } from '@solana/wallet-adapter-react'
 import { Button } from '@/components/ui/button'

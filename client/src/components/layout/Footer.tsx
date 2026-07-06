@@ -1,10 +1,3 @@
-// src/components/layout/Footer.tsx
-// Sprint 1 — Rebuilt responsive footer using design system.
-//
-// PRESERVED: link structure (product/resources/company), social links, scroll-to-top
-// CHANGED: HeroUI Divider/Button → native elements + design tokens
-
-import React from 'react'
 import { Link } from 'react-router-dom'
 import {
   Cloud,
@@ -17,14 +10,10 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
-// ── Link data ─────────────────────────────────────────────────
+//  Link data 
 
 const FOOTER_LINKS = {
-  product: [
-    { label: 'Dashboard',       href: '/dashboard',  external: false },
-    { label: 'Upload Files',    href: '/upload',     external: false },
-    { label: 'My Vault',        href: '/files',      external: false },
-  ],
+
   resources: [
     { label: 'Help Center',     href: '#',           external: true  },
     { label: 'Documentation',   href: '#',           external: true  },
@@ -40,13 +29,9 @@ const SOCIAL_LINKS = [
   { label: 'Twitter / X', icon: Twitter, href: 'https://x.com/denftcloud' },
 ] as const
 
-const FEATURES = [
-  { icon: Shield, text: 'Blockchain Secured'    },
-  { icon: Globe,  text: 'Globally Distributed' },
-  { icon: Zap,    text: 'Lightning Fast'        },
-] as const
 
-// ── Footer link component ─────────────────────────────────────
+
+// Footer link component 
 
 function FooterLink({
   href,
@@ -102,62 +87,9 @@ export function Footer() {
       />
 
       <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8 py-12">
-        {/* ── Main grid ─────────────────────────────────────── */}
+        {/*  Main grid  */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
 
-          {/* Brand + features — spans 2 cols on md+ */}
-          <div className="col-span-2 md:col-span-2 space-y-6">
-            {/* Logo */}
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-md"
-              aria-label="Denft — Home"
-            >
-              <Cloud className="h-6 w-6 text-primary-400 group-hover:text-primary-300 transition-colors" aria-hidden="true" />
-              <span className="font-bold text-lg gradient-text">Denft</span>
-            </Link>
-
-            <p className="text-sm text-neutral-500 leading-relaxed max-w-xs">
-              Decentralized cloud storage with cryptographic proof of authenticity.
-              Your files. Your keys. Yours.
-            </p>
-
-            {/* Feature pills */}
-            <div className="flex flex-wrap gap-2" role="list" aria-label="Key features">
-              {FEATURES.map(({ icon: Icon, text }) => (
-                <div
-                  key={text}
-                  role="listitem"
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-neutral-800 bg-neutral-900 text-xs text-neutral-400"
-                >
-                  <Icon className="h-3 w-3 text-primary-400" aria-hidden="true" />
-                  {text}
-                </div>
-              ))}
-            </div>
-
-            {/* Social links */}
-            <div className="flex gap-3" role="list" aria-label="Social links">
-              {SOCIAL_LINKS.map(({ label, icon: Icon, href }) => (
-                <a
-                  key={href}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  role="listitem"
-                  aria-label={label}
-                  className={cn(
-                    'p-2 rounded-lg border border-neutral-800 bg-neutral-900',
-                    'text-neutral-500 hover:text-primary-400 hover:border-neutral-700',
-                    'transition-colors duration-sm',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500'
-                  )}
-                >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                </a>
-              ))}
-            </div>
-          </div>
 
           {/* Link columns */}
           {(Object.entries(FOOTER_LINKS) as [string, typeof FOOTER_LINKS[keyof typeof FOOTER_LINKS]][])

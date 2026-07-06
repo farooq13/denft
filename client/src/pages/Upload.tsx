@@ -2,7 +2,7 @@
 // Sprint 4 — File Upload Experience
 // Complete rewrite removing NextUI and introducing multi-stage upload UI.
 
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   UploadCloud,
@@ -90,7 +90,6 @@ export function Upload() {
   const { showToast } = useToaster()
   
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const dropZoneRef = useRef<HTMLDivElement>(null)
   
   // State
   const [file, setFile] = useState<ExtendedFile | null>(null)
@@ -228,7 +227,6 @@ export function Upload() {
     setFile(null)
     setStage('idle')
     setErrorMsg(null)
-    setUploadProgress(0) // reset context progress if needed
   }
 
   // ── RENDER HELPERS ──────────────────────────────────────────
@@ -285,7 +283,7 @@ export function Upload() {
             
             {/* 1. DROPZONE (Shown when idle and no file) */}
             {!file && (
-              <Card variant="interactive" className={cn(
+              <Card variant="outlined" className={cn(
                 "border-2 border-dashed transition-all duration-300",
                 isDragOver ? "border-primary-500 bg-primary-500/5 scale-[1.02]" : "border-neutral-700 bg-neutral-900/50 hover:border-neutral-500 hover:bg-neutral-800"
               )}>
@@ -490,7 +488,7 @@ export function Upload() {
 
             {/* BLOCKCHAIN EXPLAINER (Shown during signing/confirming) */}
             {(stage === 'signing' || stage === 'confirming') && (
-              <Card variant="subtle" className="border-warning-500/20 bg-warning-500/5 animate-fade-in">
+              <Card variant="ghost" className="border-warning-500/20 bg-warning-500/5 animate-fade-in">
                 <CardBody className="p-5 flex items-start gap-4">
                   <div className="p-2 bg-warning-500/20 rounded-lg shrink-0 mt-0.5">
                     <Info className="h-5 w-5 text-warning-400" />
@@ -551,8 +549,9 @@ export function Upload() {
 
                 {/* Category */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Category</label>
+                  <label htmlFor="category" className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Category</label>
                   <select 
+                    id="category"
                     value={settings.category}
                     onChange={(e) => setSettings(p => ({ ...p, category: e.target.value }))}
                     className="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-2.5 text-sm text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -566,9 +565,10 @@ export function Upload() {
 
                 {/* Tags */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Tags</label>
+                  <label htmlFor="tags" className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Tags</label>
                   <div className="flex gap-2 w-full">
                     <input 
+                      id="tags"
                       type="text"
                       placeholder="Add tag..."
                       value={tagInput}
@@ -597,6 +597,7 @@ export function Upload() {
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
+                      aria-label="Toggle client encryption"
                       type="checkbox" 
                       className="sr-only peer" 
                       checked={settings.enableEncryption}
@@ -610,7 +611,7 @@ export function Upload() {
             </Card>
 
             {/* Security Box */}
-            <Card variant="subtle" className="border-success-500/20 bg-success-500/5">
+            <Card variant="ghost" className="border-success-500/20 bg-success-500/5">
               <CardBody className="p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <Shield className="h-5 w-5 text-success-400" />

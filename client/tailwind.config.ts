@@ -55,17 +55,17 @@ const config: Config = {
           700: '#B45309',
         },
         neutral: {
-          50:  '#F8FAFC',  // Light mode backgrounds
-          100: '#F1F5F9',
-          200: '#E2E8F0',  // Light mode borders
-          300: '#CBD5E1',
-          400: '#94A3B8',  // Dark mode secondary text (WCAG AA ✓)
-          500: '#64748B',
-          600: '#475569',  // Light mode secondary text (WCAG AA ✓)
-          700: '#334155',  // Light mode primary text
-          800: '#1E293B',  // Dark mode containers
-          900: '#0F172A',  // Dark mode backgrounds
-          950: '#020617',
+          50:  'var(--tw-neutral-50)',
+          100: 'var(--tw-neutral-100)',
+          200: 'var(--tw-neutral-200)',
+          300: 'var(--tw-neutral-300)',
+          400: 'var(--tw-neutral-400)',
+          500: 'var(--tw-neutral-500)',
+          600: 'var(--tw-neutral-600)',
+          700: 'var(--tw-neutral-700)',
+          800: 'var(--tw-neutral-800)',
+          900: 'var(--tw-neutral-900)',
+          950: 'var(--tw-neutral-950)',
         },
       },
 

@@ -2,7 +2,7 @@
 // Sprint 3 — Dashboard with stats, storage breakdown, activity charts.
 // Completely removed NextUI. Uses Skeleton during load.
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Upload,
@@ -15,7 +15,6 @@ import {
   Clock,
   HardDrive,
   Activity,
-  Users,
   Star,
   ArrowRight,
   Plus,
@@ -35,6 +34,7 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { DashboardSkeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 import { formatFileSize } from '@/lib/utils'
 
 // ── Mock Data ──────────────────────────────────────────────────
@@ -92,7 +92,6 @@ export function Dashboard() {
   const {
     files,
     recentFiles,
-    favoriteFiles,
     isLoading,
     error,
     totalStorage,
@@ -213,7 +212,7 @@ export function Dashboard() {
             { label: 'Total Views', value: quickStats.totalViews, icon: Eye, color: 'text-accent-400', bg: 'bg-accent-500/10' },
             { label: 'Files Shared', value: quickStats.filesShared, icon: Share2, color: 'text-warning-400', bg: 'bg-warning-500/10' },
           ].map(stat => (
-            <Card key={stat.label} variant="subtle">
+            <Card key={stat.label} variant="ghost">
               <CardBody className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -345,7 +344,7 @@ export function Dashboard() {
                               <span>{formatFileSize(Number(file.fileSize))}</span>
                               <span>•</span>
                               <span>{new Date(file.uploadedAt).toLocaleDateString()}</span>
-                              {file.isPublic && <Badge variant="success" size="xs">Public</Badge>}
+                              {file.isPublic && <Badge variant="success" size="sm">Public</Badge>}
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
@@ -379,7 +378,7 @@ export function Dashboard() {
           <div className="space-y-8">
             
             {/* Quick Upload Banner */}
-            <Card variant="interactive" className="bg-gradient-to-br from-primary-600/10 to-accent-600/10 border-primary-500/20" onClick={() => navigate('/upload')}>
+            <Card variant="outlined" className="bg-gradient-to-br from-primary-600/10 to-accent-600/10 border-primary-500/20 hover:border-primary-500/40 cursor-pointer transition-colors" onClick={() => navigate('/upload')}>
               <CardBody className="p-6 text-center">
                 <div className="inline-flex p-4 bg-primary-500/20 rounded-full mb-4">
                   <Upload className="h-8 w-8 text-primary-400" />

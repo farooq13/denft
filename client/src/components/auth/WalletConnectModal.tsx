@@ -9,12 +9,12 @@
 // PRESERVED: wallet detection logic, connection flow, error display,
 //            walletOptions list, install URL fallback.
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X, ExternalLink, Wallet, AlertCircle, Loader2 } from 'lucide-react'
 import { useWallet as useSolanaWallet } from '@solana/wallet-adapter-react'
 import { type WalletName } from '@solana/wallet-adapter-base'
 import { useWallet } from '@/contexts/WalletContext'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/cn'
 
 // ── Wallet options ────────────────────────────────────────────
@@ -71,7 +71,7 @@ export interface WalletConnectModalProps {
 function isWalletDetected(detectionKey: string | null): boolean {
   if (!detectionKey) return true // web-based wallets
   try {
-    const { solana } = window as Record<string, unknown>
+    const { solana } = window as unknown as Record<string, unknown>
     return !!(solana && (solana as Record<string, unknown>)[detectionKey])
   } catch {
     return false
@@ -141,7 +141,7 @@ export function WalletConnectModal({ isOpen, onClose }: WalletConnectModalProps)
 
   if (!isOpen) return null
 
-  return (
+  return createPortal(
     <>
       {/* ── Backdrop ──────────────────────────────────────── */}
       <div
@@ -296,6 +296,7 @@ export function WalletConnectModal({ isOpen, onClose }: WalletConnectModalProps)
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   )
 }

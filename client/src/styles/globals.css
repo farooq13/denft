@@ -1,17 +1,12 @@
-/* ============================================================
-   Denft Design System — globals.css
-   Phase 2 — Tailwind v4 CSS-first configuration
-   ============================================================ */
-
-/* ── Fonts ────────────────────────────────────────────────── */
+/*  Fonts  */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/600.css';
 
-/* ── Tailwind ─────────────────────────────────────────────── */
+/*  Tailwind  */
 @import "tailwindcss";
 
-/* ── Design Tokens (@theme) ───────────────────────────────── */
+/*  Design Tokens (@theme)  */
 @theme {
   /* Colours — Primary (Blue) */
   --color-primary-50:  #F0F6FF;
@@ -54,18 +49,18 @@
   --color-warning-600: #D97706;
   --color-warning-700: #B45309;
 
-  /* Colours — Neutral (Slate) */
-  --color-neutral-50:  #F8FAFC;
-  --color-neutral-100: #F1F5F9;
-  --color-neutral-200: #E2E8F0;
-  --color-neutral-300: #CBD5E1;
-  --color-neutral-400: #94A3B8;
-  --color-neutral-500: #64748B;
-  --color-neutral-600: #475569;
-  --color-neutral-700: #334155;
-  --color-neutral-800: #1E293B;
-  --color-neutral-900: #0F172A;
-  --color-neutral-950: #020617;
+  /* Colours — Neutral (VS Code Dynamic) */
+  --color-neutral-50:  var(--tw-neutral-50);
+  --color-neutral-100: var(--tw-neutral-100);
+  --color-neutral-200: var(--tw-neutral-200);
+  --color-neutral-300: var(--tw-neutral-300);
+  --color-neutral-400: var(--tw-neutral-400);
+  --color-neutral-500: var(--tw-neutral-500);
+  --color-neutral-600: var(--tw-neutral-600);
+  --color-neutral-700: var(--tw-neutral-700);
+  --color-neutral-800: var(--tw-neutral-800);
+  --color-neutral-900: var(--tw-neutral-900);
+  --color-neutral-950: var(--tw-neutral-950);
 
   /* Font Families */
   --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -113,7 +108,7 @@
   --animate-pulse-sm:       pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* ── Keyframes ────────────────────────────────────────────── */
+/*  Keyframes  */
 @keyframes fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -170,45 +165,71 @@
   66%       { transform: translate(-20px, 20px) rotate(240deg); }
 }
 
-/* ── CSS Custom Properties (legacy + theme sync) ──────────── */
+/*  CSS Custom Properties (legacy + theme sync)  */
 :root {
   /* Semantic design tokens for components */
-  --background:            15 23 42;   /* neutral-900 — default dark */
-  --foreground:            248 250 252;
+  --background:            30 30 30;   /* #1E1E1E */
+  --foreground:            248 248 248; /* #F8F8F8 */
   --primary:               59 130 246;
   --primary-foreground:    255 255 255;
-  --secondary:             100 116 139;
-  --secondary-foreground:  248 250 252;
+  --secondary:             85 85 85;
+  --secondary-foreground:  248 248 248;
   --accent:                139 92 246;
   --accent-foreground:     255 255 255;
   --destructive:           239 68 68;
   --destructive-foreground:255 255 255;
-  --border:                71 85 105;
-  --input:                 30 41 59;
+  --border:                62 62 66; /* #3E3E42 */
+  --input:                 37 37 38; /* #252526 */
   --ring:                  59 130 246;
   --radius:                0.5rem;
+
+  /* VS Code Dark Theme Palette */
+  --tw-neutral-50:  #F8F8F8;
+  --tw-neutral-100: #E8E8E8;
+  --tw-neutral-200: #D4D4D4;
+  --tw-neutral-300: #A0A0A0;
+  --tw-neutral-400: #858585;
+  --tw-neutral-500: #555555;
+  --tw-neutral-600: #3E3E42;
+  --tw-neutral-700: #2D2D30;
+  --tw-neutral-800: #252526;
+  --tw-neutral-900: #1E1E1E;
+  --tw-neutral-950: #181818;
 
   /* Sonner toast positioning */
   --offset: 16px;
 }
 
 .dark {
-  --background:            15 23 42;
-  --foreground:            248 250 252;
-  --border:                51 65 85;
-  --input:                 30 41 59;
+  --background:            30 30 30;
+  --foreground:            248 248 248;
+  --border:                62 62 66;
+  --input:                 37 37 38;
 }
 
 .light {
-  --background:            248 250 252;
-  --foreground:            15 23 42;
-  --secondary:             148 163 184;
-  --secondary-foreground:  15 23 42;
-  --border:                226 232 240;
-  --input:                 248 250 252;
+  --background:            248 248 248;
+  --foreground:            30 30 30;
+  --secondary:             160 160 160;
+  --secondary-foreground:  30 30 30;
+  --border:                212 212 212;
+  --input:                 248 248 248;
+
+  /* Inverted VS Code Theme */
+  --tw-neutral-950: #F8F8F8;
+  --tw-neutral-900: #E8E8E8;
+  --tw-neutral-800: #D4D4D4;
+  --tw-neutral-700: #A0A0A0;
+  --tw-neutral-600: #858585;
+  --tw-neutral-500: #555555;
+  --tw-neutral-400: #3E3E42;
+  --tw-neutral-300: #2D2D30;
+  --tw-neutral-200: #252526;
+  --tw-neutral-100: #1E1E1E;
+  --tw-neutral-50:  #181818;
 }
 
-/* ── Base Styles ──────────────────────────────────────────── */
+/*  Base Styles  */
 *,
 *::before,
 *::after {
@@ -241,7 +262,7 @@ body {
   outline-offset: 2px;
 }
 
-/* ── Accessibility: Reduced Motion ────────────────────────── */
+/*  Accessibility: Reduced Motion  */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -253,7 +274,7 @@ body {
   }
 }
 
-/* ── Custom Scrollbar ─────────────────────────────────────── */
+/*  Custom Scrollbar  */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -264,15 +285,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #3B82F6, #8B5CF6);
+  background: #334155;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #2563EB, #7C3AED);
+  background: #475569;
 }
 
-/* ── Skip to Main Content (Accessibility) ─────────────────── */
+/*  Skip to Main Content (Accessibility)  */
 .skip-to-main {
   position: absolute;
   top: -100%;
@@ -291,7 +312,7 @@ body {
   top: 0;
 }
 
-/* ── Typography Utility Classes ───────────────────────────── */
+/*  Typography Utility Classes  */
 @layer components {
   .text-display {
     font-size: 3rem;
@@ -365,7 +386,7 @@ body {
   }
 }
 
-/* ── Gradient Utilities ───────────────────────────────────── */
+/*  Gradient Utilities  */
 @layer utilities {
   .gradient-text {
     background: linear-gradient(135deg, #3B82F6, #8B5CF6);
@@ -455,7 +476,7 @@ body {
   }
 }
 
-/* ── Upload Drop Zone ─────────────────────────────────────── */
+/*  Upload Drop Zone  */
 .upload-zone {
   border: 2px dashed #475569;
   transition: all 250ms ease;
@@ -475,7 +496,7 @@ body {
   transform: scale(1.01);
 }
 
-/* ── File Type Colour Tokens ──────────────────────────────── */
+/*  File Type Colour Tokens  */
 .file-type-document { color: #3B82F6; }
 .file-type-image    { color: #8B5CF6; }
 .file-type-video    { color: #EC4899; }
@@ -484,7 +505,7 @@ body {
 .file-type-code     { color: #06B6D4; }
 .file-type-default  { color: #94A3B8; }
 
-/* ── Component Hover Lift ─────────────────────────────────── */
+/*  Component Hover Lift  */
 .hover-lift {
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
@@ -494,22 +515,34 @@ body {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
-/* ── Sonner Toast Overrides ───────────────────────────────── */
+/*  Sonner Toast Overrides  */
 [data-sonner-toaster] {
   font-family: var(--font-family-sans) !important;
 }
 
-/* ── Print Styles ─────────────────────────────────────────── */
+/*  Print Styles  */
 @media print {
   .no-print { display: none !important; }
   body { background: white !important; color: black !important; }
 }
 
-/* ── High Contrast Mode ───────────────────────────────────── */
+/*  High Contrast Mode  */
 @media (prefers-contrast: high) {
   .glass,
   .glass-dark {
     background: rgba(0, 0, 0, 0.95);
     border: 2px solid rgba(255, 255, 255, 0.8);
+  }
+}
+
+/*  Reduced Motion  */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -1,6 +1,3 @@
-// src/components/ui/progress.tsx
-// Sprint 3 — Simple, accessible progress bar component
-
 import React from 'react'
 import { cn } from '@/lib/cn'
 

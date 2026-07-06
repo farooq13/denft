@@ -1,8 +1,4 @@
-// src/pages/Files.tsx
-// Sprint 3 — File Vault with grid/list toggle, search, filter, sort.
-// Removed NextUI dependencies.
-
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   Search,
@@ -16,14 +12,8 @@ import {
   Video,
   Music,
   Archive,
-  Download,
-  Share2,
-  Eye,
   Star,
   Trash2,
-  Calendar,
-  HardDrive,
-  X,
   Files as FilesIcon,
 } from 'lucide-react'
 import { useFiles } from '@/contexts/FileContext'
@@ -33,6 +23,8 @@ import { Card, CardBody } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { VaultSkeleton } from '@/components/ui/skeleton'
 import { FileCard, FileListRow } from '@/components/files/FileCard'
+import { FileDetailModal } from '@/components/files/FileDetailModal'
+import { ShareModal } from '@/components/files/ShareModal'
 import { toast } from 'sonner'
 import { cn } from '@/lib/cn'
 
@@ -86,6 +78,7 @@ export function Files() {
 
   // Modals
   const [shareModalFile, setShareModalFile] = useState<any | null>(null)
+  const [detailModalFile, setDetailModalFile] = useState<any | null>(null)
   const [deleteModalFile, setDeleteModalFile] = useState<any | null>(null)
   
   const isBulkDeleting = useRef(false)
@@ -210,9 +203,12 @@ export function Files() {
     }
   }
 
-  const handleFileAction = async (action: 'download' | 'favorite' | 'share' | 'delete' | 'copy', file: any) => {
+  const handleFileAction = async (action: 'view' | 'download' | 'favorite' | 'share' | 'delete' | 'copy', file: any) => {
     try {
       switch (action) {
+        case 'view':
+          setDetailModalFile(file)
+          break
         case 'download':
           await downloadFile(file.fileId)
           toast.success('Download started')
@@ -264,7 +260,7 @@ export function Files() {
       <PageTransition>
         <div className="pt-10">
           <EmptyState 
-            icon={<Files className="h-12 w-12" />}
+            icon={<FilesIcon className="h-12 w-12" />}
             title="Failed to load files"
             description={error}
             action={{
@@ -332,12 +328,13 @@ export function Files() {
 
         {/* ── FILTERS ───────────────────────────────────────────── */}
         {showFilters && (
-          <Card variant="subtle" className="animate-fade-in border-neutral-700">
+          <Card variant="ghost" className="animate-fade-in border-neutral-700">
             <CardBody className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
                 <input 
+                  aria-label="Search files"
                   type="text" 
                   placeholder="Search files..."
                   value={searchQuery}
@@ -347,6 +344,7 @@ export function Files() {
               </div>
 
               <select 
+                aria-label="Select category"
                 value={selectedCategory}
                 onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
                 className="w-full bg-neutral-800 border border-neutral-700 rounded-lg py-2 px-3 text-sm text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
@@ -355,6 +353,7 @@ export function Files() {
               </select>
 
               <select 
+                aria-label="Sort by"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="w-full bg-neutral-800 border border-neutral-700 rounded-lg py-2 px-3 text-sm text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
@@ -397,6 +396,7 @@ export function Files() {
                   className="relative flex items-center justify-center w-5 h-5 cursor-pointer"
                 >
                   <input
+                    aria-label="Select all files"
                     type="checkbox"
                     checked={selectedFiles.size === paginatedFiles.length && paginatedFiles.length > 0}
                     onChange={() => {}}
@@ -490,34 +490,26 @@ export function Files() {
       )}
 
       {/* Share Modal */}
-      {shareModalFile && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-scale-in">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary-500/10 rounded-lg"><Share2 className="h-5 w-5 text-primary-400" /></div>
-                <div>
-                  <h3 className="font-semibold text-neutral-50">Share File</h3>
-                  <p className="text-xs text-neutral-400 truncate w-[200px]">{shareModalFile.fileName}</p>
-                </div>
-              </div>
-              <button className="text-neutral-500 hover:text-neutral-300 transition-colors" onClick={() => setShareModalFile(null)}>
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-neutral-300 mb-1.5">Wallet Address</label>
-                <input type="text" placeholder="Enter Solana address" className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-primary-500" />
-              </div>
-              <Button variant="primary" fullWidth onClick={() => { toast.success('Share permissions updated'); setShareModalFile(null); }}>
-                Share File
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ShareModal 
+        isOpen={!!shareModalFile}
+        onClose={() => setShareModalFile(null)}
+        file={shareModalFile}
+      />
+
+      {/* File Detail Modal */}
+      <FileDetailModal 
+        isOpen={!!detailModalFile}
+        onClose={() => setDetailModalFile(null)}
+        file={detailModalFile}
+        onDownload={async (id) => {
+          await downloadFile(id)
+          toast.success('Download started')
+        }}
+        onShare={(f) => {
+          setDetailModalFile(null)
+          setShareModalFile(f)
+        }}
+      />
 
     </PageTransition>
   )

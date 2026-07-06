@@ -1,7 +1,7 @@
 // src/components/auth/SocialLoginModal.tsx
 // Sprint 2 — Placeholder for Social Login (Web3Auth integration planned for later).
 
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { X, Mail, Twitter, Github, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/cn'

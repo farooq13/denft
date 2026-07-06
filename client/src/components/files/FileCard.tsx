@@ -42,7 +42,8 @@ interface FileCardProps {
   file: FileData
   isSelected: boolean
   onToggleSelect: (id: string) => void
-  onAction: (action: 'download' | 'favorite' | 'share' | 'delete' | 'copy', file: FileData) => void
+  onAction: (action: 'view' | 'download' | 'favorite' | 'share' | 'delete' | 'copy', file: FileData) => void
+  readOnly?: boolean
 }
 
 const getFileIcon = (category: string) => {
@@ -81,7 +82,7 @@ const CardCheckbox = ({ checked, onChange, onClick }: { checked: boolean; onChan
 
 // ── GRID VIEW CARD ──────────────────────────────────────────────
 
-export function FileCard({ file, isSelected, onToggleSelect, onAction }: FileCardProps) {
+export function FileCard({ file, isSelected, onToggleSelect, onAction, readOnly = false }: FileCardProps) {
   const FileIcon = getFileIcon(file.category)
   
   // Custom dropdown implementation (since we removed NextUI Dropdown)
@@ -100,18 +101,22 @@ export function FileCard({ file, isSelected, onToggleSelect, onAction }: FileCar
 
   return (
     <Card 
-      variant={isSelected ? 'accent' : 'interactive'} 
+      variant={isSelected ? 'elevated' : 'default'} 
       className={`relative overflow-visible ${isSelected ? 'ring-2 ring-primary-500 border-primary-500/50' : ''}`}
-      onClick={() => onToggleSelect(file.fileId)}
+      onClick={() => onAction('view', file)}
     >
       <CardBody className="p-5">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
-          <CardCheckbox 
-            checked={isSelected} 
-            onChange={() => {}} 
-            onClick={(e) => { e.stopPropagation(); onToggleSelect(file.fileId) }} 
-          />
+          {!readOnly ? (
+            <CardCheckbox 
+              checked={isSelected} 
+              onChange={() => {}} 
+              onClick={(e) => { e.stopPropagation(); onToggleSelect(file.fileId) }} 
+            />
+          ) : (
+            <div /> /* Spacer */
+          )}
           <div className="flex items-center gap-2">
             {file.isFavorite && <Star className="h-4 w-4 text-warning-400 fill-warning-400" aria-label="Favorite" />}
             {file.isPublic ? (
@@ -148,8 +153,8 @@ export function FileCard({ file, isSelected, onToggleSelect, onAction }: FileCar
         <div className="flex gap-2">
           <Button 
             size="sm" 
-            variant="ghost-primary" 
-            className="flex-1"
+            variant="ghost" 
+            className="flex-1 text-primary-400 hover:text-primary-300"
             leftIcon={<Download className="h-4 w-4" />}
             onClick={(e) => { e.stopPropagation(); onAction('download', file) }}
           >
@@ -157,48 +162,50 @@ export function FileCard({ file, isSelected, onToggleSelect, onAction }: FileCar
           </Button>
 
           {/* Simple Dropdown Menu */}
-          <div className="relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
-            <Button 
-              size="sm" 
-              variant="ghost-neutral" 
-              className="px-2"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-expanded={menuOpen}
-              aria-label="More options"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-            
-            {menuOpen && (
-              <div className="absolute right-0 bottom-full mb-2 w-48 rounded-xl border border-neutral-700 bg-neutral-900 shadow-xl py-1 z-50 animate-fade-in origin-bottom-right">
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-neutral-300 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
-                  onClick={() => { setMenuOpen(false); onAction('favorite', file) }}
-                >
-                  <Star className="h-4 w-4" /> {file.isFavorite ? 'Unfavorite' : 'Favorite'}
-                </button>
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-neutral-300 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
-                  onClick={() => { setMenuOpen(false); onAction('share', file) }}
-                >
-                  <Share2 className="h-4 w-4" /> Share
-                </button>
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-neutral-300 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
-                  onClick={() => { setMenuOpen(false); onAction('copy', file) }}
-                >
-                  <Copy className="h-4 w-4" /> Copy Hash
-                </button>
-                <div className="h-px bg-neutral-800 my-1 mx-2" />
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-error-400 hover:bg-error-500/10 transition-colors"
-                  onClick={() => { setMenuOpen(false); onAction('delete', file) }}
-                >
-                  <Trash2 className="h-4 w-4" /> Delete
-                </button>
-              </div>
-            )}
-          </div>
+          {!readOnly && (
+            <div className="relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+              <Button 
+                size="sm" 
+                variant="ghost-neutral" 
+                className="px-2"
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-expanded={menuOpen}
+                aria-label="More options"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+              
+              {menuOpen && (
+                <div className="absolute right-0 bottom-full mb-2 w-48 rounded-xl border border-neutral-700 bg-neutral-900 shadow-xl py-1 z-50 animate-fade-in origin-bottom-right">
+                  <button
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-neutral-300 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
+                    onClick={() => { setMenuOpen(false); onAction('favorite', file) }}
+                  >
+                    <Star className="h-4 w-4" /> {file.isFavorite ? 'Unfavorite' : 'Favorite'}
+                  </button>
+                  <button
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-neutral-300 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
+                    onClick={() => { setMenuOpen(false); onAction('share', file) }}
+                  >
+                    <Share2 className="h-4 w-4" /> Share
+                  </button>
+                  <button
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-neutral-300 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
+                    onClick={() => { setMenuOpen(false); onAction('copy', file) }}
+                  >
+                    <Copy className="h-4 w-4" /> Copy Hash
+                  </button>
+                  <div className="h-px bg-neutral-800 my-1 mx-2" />
+                  <button
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-error-400 hover:bg-error-500/10 transition-colors"
+                    onClick={() => { setMenuOpen(false); onAction('delete', file) }}
+                  >
+                    <Trash2 className="h-4 w-4" /> Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </CardBody>
     </Card>
@@ -207,7 +214,7 @@ export function FileCard({ file, isSelected, onToggleSelect, onAction }: FileCar
 
 // ── LIST VIEW ROW ───────────────────────────────────────────────
 
-export function FileListRow({ file, isSelected, onToggleSelect, onAction }: FileCardProps) {
+export function FileListRow({ file, isSelected, onToggleSelect, onAction, readOnly = false }: FileCardProps) {
   const FileIcon = getFileIcon(file.category)
   
   const [menuOpen, setMenuOpen] = React.useState(false)
@@ -230,14 +237,18 @@ export function FileListRow({ file, isSelected, onToggleSelect, onAction }: File
           ? 'bg-primary-500/10 border-primary-500/50' 
           : 'bg-neutral-900 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800'
       }`}
-      onClick={() => onToggleSelect(file.fileId)}
+      onClick={() => onAction('view', file)}
     >
       <div className="flex items-center gap-4 flex-1 min-w-0">
-        <CardCheckbox 
-          checked={isSelected} 
-          onChange={() => {}} 
-          onClick={(e) => { e.stopPropagation(); onToggleSelect(file.fileId) }} 
-        />
+        {!readOnly ? (
+          <CardCheckbox 
+            checked={isSelected} 
+            onChange={() => {}} 
+            onClick={(e) => { e.stopPropagation(); onToggleSelect(file.fileId) }} 
+          />
+        ) : (
+          <div /> /* Spacer */
+        )}
         
         <div className="p-2.5 bg-neutral-800 rounded-lg text-neutral-400 shrink-0">
           <FileIcon className="h-5 w-5" />
@@ -282,16 +293,17 @@ export function FileListRow({ file, isSelected, onToggleSelect, onAction }: File
           <Download className="h-4 w-4" />
         </Button>
 
-        <div className="relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
-          <Button 
-            size="sm" 
-            variant="ghost-neutral" 
-            className="px-2"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-expanded={menuOpen}
-          >
-            <MoreVertical className="h-4 w-4" />
-          </Button>
+        {!readOnly && (
+          <div className="relative" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+            <Button 
+              size="sm" 
+              variant="ghost-neutral" 
+              className="px-2"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-expanded={menuOpen}
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
           
           {menuOpen && (
             <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-neutral-700 bg-neutral-900 shadow-xl py-1 z-50 animate-fade-in origin-top-right">
@@ -322,7 +334,8 @@ export function FileListRow({ file, isSelected, onToggleSelect, onAction }: File
               </button>
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )

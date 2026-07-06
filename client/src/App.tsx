@@ -1,8 +1,4 @@
-// src/App.tsx
-// Sprint 1: Wired in AppLayout wrapper, removed standalone Navbar/Footer,
-//           removed 2s splash screen (Sprint 0), code-split all routes.
-
-import React, { lazy, Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { HeroUIProvider } from '@heroui/react'
 import { WalletProvider }    from '@/contexts/WalletContext'
@@ -11,15 +7,18 @@ import { ToasterProvider }   from '@/contexts/ToasterContext'
 import { ThemeProvider }     from '@/contexts/ThemeContext'
 import { AppLayout }         from '@/components/layout/AppLayout'
 import { ProtectedRoute }    from '@/components/auth/ProtectedRoute'
+import { ErrorBoundary }     from '@/components/layout/ErrorBoundary'
 import { Toaster }           from '@/components/ui/toaster'
 import { Skeleton }          from '@/components/ui/skeleton'
 import '@/styles/globals.css'
 
-// ── Code-split pages ──────────────────────────────────────────
+//  Code-split pages 
 const Home      = lazy(() => import('@/pages/Home').then(m      => ({ default: m.Home })))
 const Dashboard = lazy(() => import('@/pages/Dashboard').then(m => ({ default: m.Dashboard })))
 const Upload    = lazy(() => import('@/pages/Upload').then(m    => ({ default: m.Upload })))
 const Files     = lazy(() => import('@/pages/Files').then(m     => ({ default: m.Files })))
+const Explore   = lazy(() => import('@/pages/Explore').then(m   => ({ default: m.Explore })))
+const Settings  = lazy(() => import('@/pages/Settings').then(m  => ({ default: m.Settings })))
 
 /** Skeleton fallback while a page chunk loads */
 function PageLoader() {
@@ -54,7 +53,8 @@ function App() {
           <WalletProvider>
             <FileProvider>
               <Router>
-                <AppLayout>
+                <ErrorBoundary>
+                  <AppLayout>
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       <Route path="/" element={<Home />} />
@@ -84,12 +84,22 @@ function App() {
                         }
                       />
 
-                      {/* TODO Sprint 5: /files/:id — file detail modal */}
-                      {/* TODO Sprint 6: /explore  — public file browser */}
-                      {/* TODO Sprint 7: /settings — user settings & profile */}
+                      {/* Sprint 6: /explore  — public file browser */}
+                      <Route path="/explore" element={<Explore />} />
+
+                      {/* Sprint 7: /settings — user settings & profile */}
+                      <Route
+                        path="/settings"
+                        element={
+                          <ProtectedRoute>
+                            <Settings />
+                          </ProtectedRoute>
+                        }
+                      />
                     </Routes>
                   </Suspense>
-                </AppLayout>
+                  </AppLayout>
+                </ErrorBoundary>
 
                 {/* Sonner toast container — positioned bottom-right */}
                 <Toaster />

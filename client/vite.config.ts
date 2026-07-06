@@ -16,4 +16,15 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-solana': ['@solana/web3.js', '@solana/wallet-adapter-react', '@solana/wallet-adapter-wallets', '@solana/wallet-adapter-base'],
+          'vendor-ui': ['lucide-react', 'framer-motion', 'sonner'],
+        }
+      }
+    }
+  }
 })

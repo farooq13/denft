@@ -1,29 +1,10 @@
-// src/components/layout/Navbar.tsx
-// Sprint 1 — Rebuilt from 641-line HeroUI monolith into a clean,
-// accessible, responsive navbar using the new design system.
-//
-// PRESERVED:
-//   - Wallet connection state (isConnected, walletAddress, balance, disconnectWallet, walletName)
-//   - FileContext (files.length for badge)
-//   - ThemeContext (theme, setTheme, toggleTheme)
-//   - Navigation routes and protected-route awareness
-//   - Wallet address copy to clipboard
-//   - External link to Solana Explorer
-//   - Theme: light / dark / system selection
-//
-// CHANGED:
-//   - HeroUI components → our Button + cn utilities
-//   - Mobile drawer → slide-in from right, full accessible
-//   - Added aria-current, aria-expanded, aria-controls, aria-label
-//   - Removed unused search state (flagged TODO)
-//   - Scroll-aware border instead of background change
-
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   Cloud,
   Upload,
   LayoutDashboard,
+  Settings,
   Files,
   LogOut,
   Copy,
@@ -48,14 +29,16 @@ import { STORAGE_KEYS } from '@/lib/constants'
 
 type Theme = 'light' | 'dark' | 'system'
 
-// ── Nav item definitions ──────────────────────────────────────
+//  Nav item definitions 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, protected: true },
   { href: '/upload',    label: 'Upload',    icon: Upload,          protected: true },
   { href: '/files',     label: 'My Vault',  icon: Files,           protected: true },
+  { href: '/explore',   label: 'Explore',   icon: Cloud,           protected: false },
+  { href: '/settings',  label: 'Settings',  icon: Settings,        protected: true },
 ] as const
 
-// ── Sub-components ────────────────────────────────────────────
+//  Sub-components 
 
 /** Active-route link with aria-current */
 function NavLink({
@@ -276,6 +259,19 @@ function WalletMenu({
 
           {/* Actions */}
           <div className="p-2">
+            <Link
+              to="/settings"
+              onClick={() => setOpen(false)}
+              role="menuitem"
+              className={cn(
+                'flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm mb-1',
+                'text-neutral-300 hover:text-neutral-100 hover:bg-neutral-800 transition-colors'
+              )}
+            >
+              <Settings className="h-4 w-4 shrink-0" aria-hidden="true" />
+              Settings
+            </Link>
+
             <a
               href={`https://explorer.solana.com/address/${walletAddress}?cluster=devnet`}
               target="_blank"
@@ -309,7 +305,7 @@ function WalletMenu({
   )
 }
 
-// ── Main Navbar ───────────────────────────────────────────────
+//  Main Navbar 
 
 export function Navbar() {
   const location = useLocation()
@@ -347,7 +343,7 @@ export function Navbar() {
 
   return (
     <>
-      {/* ── Desktop / Tablet Navbar ─────────────────────────── */}
+      {/*  Desktop / Tablet Navbar  */}
       <nav
         role="navigation"
         aria-label="Main navigation"
@@ -361,7 +357,7 @@ export function Navbar() {
             : 'border-neutral-800/50'
         )}
       >
-        {/* ── Left: Logo + Desktop Nav ──────────────────────── */}
+        {/*  Left: Logo + Desktop Nav  */}
         <div className="flex items-center gap-8">
           {/* Logo */}
           <Link
@@ -370,10 +366,10 @@ export function Navbar() {
             aria-label="Denft — Home"
           >
             <div className="relative">
-              <Cloud className="h-7 w-7 text-primary-400 group-hover:text-primary-300 transition-colors duration-sm" aria-hidden="true" />
-              <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-accent-500 to-primary-500 animate-pulse-sm" aria-hidden="true" />
+              <Cloud className="h-7 w-7 group-hover:text-primary-300 transition-colors duration-sm" aria-hidden="true" />
+              <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-primary-500 to-primary-500 animate-pulse-sm" aria-hidden="true" />
             </div>
-            <span className="font-bold text-xl gradient-text">Denft</span>
+            <span className="font-bold text-xl">Denft</span>
           </Link>
 
           {/* Desktop nav links */}
