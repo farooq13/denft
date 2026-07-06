@@ -82,3 +82,73 @@ export function SkeletonStatCard() {
     </div>
   )
 }
+
+/** Pre-composed full Dashboard skeleton */
+export function DashboardSkeleton() {
+  return (
+    <div className="space-y-8">
+      {/* Header Skeleton */}
+      <div className="h-32 w-full rounded-2xl bg-neutral-900 border border-neutral-800 animate-pulse flex justify-between items-center p-8">
+        <div className="flex gap-5 items-center">
+          <Skeleton variant="circle" className="h-16 w-16" />
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <Skeleton className="h-10 w-32 rounded-md" />
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <SkeletonStatCard />
+        <SkeletonStatCard />
+        <SkeletonStatCard />
+        <SkeletonStatCard />
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          <Skeleton className="h-[300px] w-full rounded-2xl" />
+          <Skeleton className="h-[400px] w-full rounded-2xl" />
+        </div>
+        <div className="space-y-8">
+          <Skeleton className="h-48 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Pre-composed full Vault skeleton */
+export function VaultSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="flex gap-3">
+          <Skeleton className="h-9 w-24 rounded-md" />
+          <Skeleton className="h-9 w-16 rounded-md" />
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <SkeletonFileCard />
+        <SkeletonFileCard />
+        <SkeletonFileCard />
+        <SkeletonFileCard />
+        <SkeletonFileCard />
+        <SkeletonFileCard />
+        <SkeletonFileCard />
+        <SkeletonFileCard />
+      </div>
+    </div>
+  )
+}
