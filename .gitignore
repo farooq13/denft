@@ -8,3 +8,8 @@ test-ledger
 /app
 *wallet.json
 *keypair.json
+
+# Backend
+server/.env
+server/node_modules
+server/dist

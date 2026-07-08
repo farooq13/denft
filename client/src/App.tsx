@@ -1,156 +1,118 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { HeroUIProvider } from '@heroui/react';
-import { WalletProvider } from './contexts/WalletContext';
-import { FileProvider } from './contexts/FileContext';
-import { ToasterProvider } from './contexts/ToasterContext';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { Navbar } from './components/layout/Navbar';
-import { Footer } from './components/layout/Footer';
-import { LoadingScreen } from './components/ui/LoadingScreen';
-import { ParticleBackground } from './components/ui/ParticleBackground';
-import { Home } from './pages/Home';
-import { Dashboard } from './pages/Dashboard';
-import { Upload } from './pages/Upload';
-// import { Verify } from './pages/Verify';
-import { Files } from './pages/Files';
-// import { SharedFiles } from './pages/SharedFiles';
-// import { Profile } from './pages/Profile';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { Toaster } from './components/ui/Toaster';
-import './styles/globals.css';
+import { lazy, Suspense } from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { HeroUIProvider } from '@heroui/react'
+import { WalletProvider }    from '@/contexts/WalletContext'
+import { Web3AuthProvider }    from '@/contexts/Web3AuthContext'
+import { FileProvider }      from '@/contexts/FileContext'
+import { ToasterProvider }   from '@/contexts/ToasterContext'
+import { ThemeProvider }     from '@/contexts/ThemeContext'
+import { AppLayout }         from '@/components/layout/AppLayout'
+import { ProtectedRoute }    from '@/components/auth/ProtectedRoute'
+import { ErrorBoundary }     from '@/components/layout/ErrorBoundary'
+import { Toaster }           from '@/components/ui/toaster'
+import { Skeleton }          from '@/components/ui/skeleton'
+import '@/styles/globals.css'
 
-// Enhanced animated background with floating elements
-const AnimatedBackground: React.FC = () => {
+//  Code-split pages 
+const Home      = lazy(() => import('@/pages/Home').then(m      => ({ default: m.Home })))
+const Dashboard = lazy(() => import('@/pages/Dashboard').then(m => ({ default: m.Dashboard })))
+const Upload    = lazy(() => import('@/pages/Upload').then(m    => ({ default: m.Upload })))
+const Files     = lazy(() => import('@/pages/Files').then(m     => ({ default: m.Files })))
+const Explore   = lazy(() => import('@/pages/Explore').then(m   => ({ default: m.Explore })))
+const Settings  = lazy(() => import('@/pages/Settings').then(m  => ({ default: m.Settings })))
+
+/** Skeleton fallback while a page chunk loads */
+function PageLoader() {
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* Primary gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900" />
-      
-      {/* Animated gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-purple-600/20 to-pink-600/20 animate-pulse" />
-      
-      {/* Floating geometric shapes */}
-      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-bounce" 
-           style={{ animationDuration: '6s' }} />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" 
-           style={{ animationDuration: '8s' }} />
-      <div className="absolute top-1/2 right-1/3 w-48 h-48 bg-pink-500/10 rounded-full blur-2xl animate-ping" 
-           style={{ animationDuration: '4s' }} />
-      
-      {/* Grid pattern overlay */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-      
-      {/* Particle effect container */}
-      <ParticleBackground />
+    <div className="flex flex-col gap-4 py-8">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-5/6" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-36 w-full rounded-lg" />
+        ))}
+      </div>
     </div>
-  );
-};
+  )
+}
 
-// Main App component with enhanced features
+/**
+ * App — root component.
+ *
+ * Provider order (outer → inner):
+ *   HeroUIProvider → ThemeProvider → ToasterProvider → WalletProvider → Web3AuthProvider → FileProvider
+ *
+ * NOTE: HeroUIProvider is kept for backward compat with WalletButton & remaining
+ * HeroUI components. It will be removed progressively through Sprints 2–8.
+ */
 function App() {
-  const [isAppLoading, setIsAppLoading] = useState(true);
-  const [mountAnimation, setMountAnimation] = useState(false);
-
-  // Initialize app with smooth loading transition
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsAppLoading(false);
-      setMountAnimation(true);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Show loading screen during initial app load
-  if (isAppLoading) {
-    return <LoadingScreen />;
-  }
-
   return (
     <HeroUIProvider>
       <ThemeProvider>
         <ToasterProvider>
           <WalletProvider>
-            <FileProvider>
-              <Router>
-                <div className={`min-h-screen relative transition-all duration-1000 ${
-                  mountAnimation ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                }`}>
-                  {/* Enhanced animated background */}
-                  <AnimatedBackground />
-                  
-                  {/* Main app structure with glassmorphism effect */}
-                  <div className="relative z-10 min-h-screen backdrop-blur-sm">
-                    {/* Enhanced navbar with blur effect */}
-                    <div className="sticky top-0 z-50">
-                      <Navbar />
-                    </div>
-                    
-                    {/* Main content area with enhanced styling */}
-                    <main className="container mx-auto px-4 py-8 min-h-[calc(100vh-140px)]">
-                      <div className="transition-all duration-500 ease-out">
-                        <Routes>
-                          <Route path="/" element={<Home />} />
-                          {/* <Route path="/verify" element={<Verify />} /> */}
-                          <Route
-                            path="/dashboard"
-                            element={
-                              <ProtectedRoute>
-                                <Dashboard />
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route
-                            path="/upload"
-                            element={
-                              <ProtectedRoute>
-                                <Upload />
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route
-                            path="/files"
-                            element={
-                              <ProtectedRoute>
-                                <Files />
-                              </ProtectedRoute>
-                            }
-                          />
-                          {/* <Route
-                            path="/shared"
-                            element={
-                              <ProtectedRoute>
-                                <SharedFiles />
-                              </ProtectedRoute>
-                            }
-                          /> */}
-                          {/* <Route
-                            path="/profile"
-                            element={
-                              <ProtectedRoute>
-                                <Profile />
-                              </ProtectedRoute>
-                            }
-                          /> */}
-                        </Routes>
-                      </div>
-                    </main>
-                    
-                    {/* Enhanced footer */}
-                    <Footer />
-                    
-                    {/* Toast notifications */}
-                    <Toaster />
-                  </div>
-                </div>
-              </Router>
-            </FileProvider>
+            <Web3AuthProvider>
+              <FileProvider>
+                <Router>
+                  <ErrorBoundary>
+                    <AppLayout>
+                    <Suspense fallback={<PageLoader />}>
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+
+                        <Route
+                          path="/dashboard"
+                          element={
+                            <ProtectedRoute>
+                              <Dashboard />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/upload"
+                          element={
+                            <ProtectedRoute>
+                              <Upload />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/files"
+                          element={
+                            <ProtectedRoute>
+                              <Files />
+                            </ProtectedRoute>
+                          }
+                        />
+
+                        {/* Sprint 6: /explore  — public file browser */}
+                        <Route path="/explore" element={<Explore />} />
+
+                        {/* Sprint 7: /settings — user settings & profile */}
+                        <Route
+                          path="/settings"
+                          element={
+                            <ProtectedRoute>
+                              <Settings />
+                            </ProtectedRoute>
+                          }
+                        />
+                      </Routes>
+                    </Suspense>
+                    </AppLayout>
+                  </ErrorBoundary>
+
+                  {/* Sonner toast container — positioned bottom-right */}
+                  <Toaster />
+                </Router>
+              </FileProvider>
+            </Web3AuthProvider>
           </WalletProvider>
         </ToasterProvider>
       </ThemeProvider>
     </HeroUIProvider>
-  );
+  )
 }
 
-export default App;
+export default App

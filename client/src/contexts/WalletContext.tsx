@@ -34,6 +34,7 @@ interface WalletContextType {
   disconnectWallet: () => Promise<void>;
   signTransaction: (transaction: Transaction | VersionedTransaction) => Promise<Transaction | VersionedTransaction>;
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  authenticateWallet: (walletPublicKey: PublicKey, walletName: string, customSignMessage?: (msg: Uint8Array) => Promise<Uint8Array>) => Promise<void>;
   refreshBalance: () => Promise<void>;
   clearError: () => void;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
@@ -203,21 +204,37 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
     }
   }, [disconnect, token, showToast]);
 
-  // Authenticate wallet with backend (optional)
-  const authenticateWallet = async (walletPublicKey: PublicKey, walletName: string) => {
-    if (!walletSignMessage) {
+  // Authenticate wallet with backend
+  const authenticateWallet = async (
+    walletPublicKey: PublicKey, 
+    walletName: string, 
+    customSignMessage?: (msg: Uint8Array) => Promise<Uint8Array>
+  ) => {
+    const signer = customSignMessage || walletSignMessage;
+    if (!signer) {
       throw new Error('Wallet does not support message signing');
     }
 
-    // Create authentication message
-    const authMessage = `Welcome to Denft!\n\nSign this message to authenticate your wallet.\n\nTimestamp: ${Date.now()}\nWallet: ${walletPublicKey.toString()}`;
+    // Step 1: Request Nonce
+    const nonceRes = await fetch('/api/auth/nonce', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress: walletPublicKey.toString() }),
+    });
+
+    if (!nonceRes.ok) {
+      const errorData = await nonceRes.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || 'Failed to get nonce');
+    }
+
+    const { data: { message: authMessage } } = await nonceRes.json();
     const encodedMessage = new TextEncoder().encode(authMessage);
 
-    // Sign the message
-    const signature = await walletSignMessage(encodedMessage);
+    // Step 2: Sign the message
+    const signature = await signer(encodedMessage);
 
-    // Send to backend for verification
-    const response = await fetch('/api/auth/wallet-connect', {
+    // Step 3: Send to backend for verification
+    const response = await fetch('/api/auth/verify', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -233,22 +250,21 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Authentication failed');
+      throw new Error(errorData.error?.message || 'Authentication failed');
     }
 
-    const authData = await response.json();
+    const { data: authData } = await response.json();
 
     // Store authentication data
     const tokenData = {
-      token: authData.token,
+      token: authData.accessToken,
       walletAddress: walletPublicKey.toString(),
       walletName,
       network,
-      expiresAt: authData.expiresAt,
     };
 
     localStorage.setItem('denft-auth', JSON.stringify(tokenData));
-    setToken(authData.token);
+    setToken(authData.accessToken);
   };
 
   // Sign transaction
@@ -403,6 +419,7 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
     disconnectWallet,
     signTransaction,
     signMessage,
+    authenticateWallet,
     refreshBalance,
     clearError,
     showToast,

@@ -385,7 +385,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [makeAuthenticatedRequest, files.length]);
+  }, [makeAuthenticatedRequest]);
 
   // Fetch shared files
   const fetchSharedFiles = useCallback(async (): Promise<void> => {
@@ -496,7 +496,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
         }),
       });
 
-      const data = await response.json();
+      await response.json();
       
       showToast('File shared successfully!', 'success');
       
@@ -534,7 +534,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
 
       // Get file metadata from headers
       const contentDisposition = response.headers.get('Content-Disposition');
-      const contentType = response.headers.get('Content-Type');
+      response.headers.get('Content-Type');
       const filename = contentDisposition
         ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
         : `file-${fileId}`;
@@ -574,7 +574,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      const response = await makeAuthenticatedRequest(`/api/files/${fileId}`, {
+      await makeAuthenticatedRequest(`/api/files/${fileId}`, {
         method: 'DELETE',
       });
 
@@ -628,7 +628,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     metadata: Partial<FileInfo>
   ): Promise<void> => {
     try {
-      const response = await makeAuthenticatedRequest(`/api/files/${fileId}/metadata`, {
+      await makeAuthenticatedRequest(`/api/files/${fileId}/metadata`, {
         method: 'PATCH',
         body: JSON.stringify(metadata),
       });
@@ -656,7 +656,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     setIsLoading(true);
     
     try {
-      const response = await makeAuthenticatedRequest('/api/files/bulk', {
+      await makeAuthenticatedRequest('/api/files/bulk', {
         method: 'POST',
         body: JSON.stringify({ fileIds, operation }),
       });
