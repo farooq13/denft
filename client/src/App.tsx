@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { HeroUIProvider } from '@heroui/react'
 import { WalletProvider }    from '@/contexts/WalletContext'
+import { Web3AuthProvider }    from '@/contexts/Web3AuthContext'
 import { FileProvider }      from '@/contexts/FileContext'
 import { ToasterProvider }   from '@/contexts/ToasterContext'
 import { ThemeProvider }     from '@/contexts/ThemeContext'
@@ -40,7 +41,7 @@ function PageLoader() {
  * App — root component.
  *
  * Provider order (outer → inner):
- *   HeroUIProvider → ThemeProvider → ToasterProvider → WalletProvider → FileProvider
+ *   HeroUIProvider → ThemeProvider → ToasterProvider → WalletProvider → Web3AuthProvider → FileProvider
  *
  * NOTE: HeroUIProvider is kept for backward compat with WalletButton & remaining
  * HeroUI components. It will be removed progressively through Sprints 2–8.
@@ -51,60 +52,62 @@ function App() {
       <ThemeProvider>
         <ToasterProvider>
           <WalletProvider>
-            <FileProvider>
-              <Router>
-                <ErrorBoundary>
-                  <AppLayout>
-                  <Suspense fallback={<PageLoader />}>
-                    <Routes>
-                      <Route path="/" element={<Home />} />
+            <Web3AuthProvider>
+              <FileProvider>
+                <Router>
+                  <ErrorBoundary>
+                    <AppLayout>
+                    <Suspense fallback={<PageLoader />}>
+                      <Routes>
+                        <Route path="/" element={<Home />} />
 
-                      <Route
-                        path="/dashboard"
-                        element={
-                          <ProtectedRoute>
-                            <Dashboard />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/upload"
-                        element={
-                          <ProtectedRoute>
-                            <Upload />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/files"
-                        element={
-                          <ProtectedRoute>
-                            <Files />
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/dashboard"
+                          element={
+                            <ProtectedRoute>
+                              <Dashboard />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/upload"
+                          element={
+                            <ProtectedRoute>
+                              <Upload />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/files"
+                          element={
+                            <ProtectedRoute>
+                              <Files />
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      {/* Sprint 6: /explore  — public file browser */}
-                      <Route path="/explore" element={<Explore />} />
+                        {/* Sprint 6: /explore  — public file browser */}
+                        <Route path="/explore" element={<Explore />} />
 
-                      {/* Sprint 7: /settings — user settings & profile */}
-                      <Route
-                        path="/settings"
-                        element={
-                          <ProtectedRoute>
-                            <Settings />
-                          </ProtectedRoute>
-                        }
-                      />
-                    </Routes>
-                  </Suspense>
-                  </AppLayout>
-                </ErrorBoundary>
+                        {/* Sprint 7: /settings — user settings & profile */}
+                        <Route
+                          path="/settings"
+                          element={
+                            <ProtectedRoute>
+                              <Settings />
+                            </ProtectedRoute>
+                          }
+                        />
+                      </Routes>
+                    </Suspense>
+                    </AppLayout>
+                  </ErrorBoundary>
 
-                {/* Sonner toast container — positioned bottom-right */}
-                <Toaster />
-              </Router>
-            </FileProvider>
+                  {/* Sonner toast container — positioned bottom-right */}
+                  <Toaster />
+                </Router>
+              </FileProvider>
+            </Web3AuthProvider>
           </WalletProvider>
         </ToasterProvider>
       </ThemeProvider>

@@ -1,18 +1,14 @@
-// Prisma Schema for Denft Backend
-// Database: Neon (PostgreSQL)
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// ──────────────────────────────────────────────
 // User — mirrors on-chain UserAccount
-// ──────────────────────────────────────────────
 
 model User {
   id            String   @id @default(cuid())
@@ -34,9 +30,7 @@ model User {
   @@map("users")
 }
 
-// ──────────────────────────────────────────────
 // File — mirrors on-chain FileRecord
-// ──────────────────────────────────────────────
 
 model File {
   id                String    @id @default(cuid())
@@ -68,9 +62,7 @@ model File {
   @@map("files")
 }
 
-// ──────────────────────────────────────────────
 // Session — refresh token tracking for JWT auth
-// ──────────────────────────────────────────────
 
 model Session {
   id            String   @id @default(cuid())

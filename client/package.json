@@ -22,6 +22,11 @@
     "@solana/wallet-adapter-wallets": "^0.19.37",
     "@tailwindcss/vite": "^4.1.12",
     "@tanstack/react-query": "^5.86.0",
+    "@web3auth/auth-adapter": "^9.7.0",
+    "@web3auth/base": "^9.7.0",
+    "@web3auth/no-modal": "^11.3.0",
+    "@web3auth/openlogin-adapter": "^8.12.4",
+    "@web3auth/solana-provider": "^9.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
@@ -52,6 +57,7 @@
     "globals": "^16.3.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.4"
+    "vite": "^7.1.4",
+    "vite-plugin-node-polyfills": "^0.28.0"
   }
 }
