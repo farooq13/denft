@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
 import { useWallet } from './WalletContext';
 import { useToaster } from './ToasterContext';
+import * as anchor from '@coral-xyz/anchor';
+import { useConnection, useAnchorWallet } from '@solana/wallet-adapter-react';
+import { PublicKey } from '@solana/web3.js';
+import idl from '../idl/denft.json';
 
 // Enhanced file interface with more metadata
 interface FileInfo {
@@ -40,7 +44,9 @@ interface FileInfo {
 interface UploadResult {
   success: boolean;
   fileId: string;
-  transactionSignature: string;
+  fileHash: string;
+  onChainStatus: string;
+  transactionSignature?: string;
   ipfsHash: string;
   fileSize: number;
   contentType: string;
@@ -185,24 +191,49 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     direction: 'desc'
   });
 
-  const { token, walletAddress, isConnected } = useWallet();
+  const { token, walletAddress, isConnected, refreshTokenFromBackend } = useWallet();
   const { showToast } = useToaster();
+  const { connection } = useConnection();
+  const anchorWallet = useAnchorWallet();
 
-  // Enhanced authenticated request helper
   const makeAuthenticatedRequest = useCallback(async (url: string, options: RequestInit = {}) => {
-    if (!token || !walletAddress) {
-      throw new Error('Authentication required. Please connect your wallet.');
+    let currentToken = token;
+    
+    if (!currentToken && refreshTokenFromBackend) {
+      currentToken = await refreshTokenFromBackend();
     }
 
-    const response = await fetch(url, {
+    if (!currentToken || !walletAddress) {
+      throw new Error('Authentication required. Please disconnect and reconnect your wallet.');
+    }
+
+    let response = await fetch(url, {
       ...options,
       headers: {
         ...options.headers,
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${currentToken}`,
         'X-Wallet-Address': walletAddress,
         ...(!(options.body instanceof FormData) && { 'Content-Type': 'application/json' }),
       },
     });
+
+    if (response.status === 401 && refreshTokenFromBackend) {
+      const errorData = await response.clone().json().catch(() => ({}));
+      if (errorData.error?.code === 'TOKEN_EXPIRED') {
+        const newToken = await refreshTokenFromBackend();
+        if (newToken) {
+          response = await fetch(url, {
+            ...options,
+            headers: {
+              ...options.headers,
+              'Authorization': `Bearer ${newToken}`,
+              'X-Wallet-Address': walletAddress,
+              ...(!(options.body instanceof FormData) && { 'Content-Type': 'application/json' }),
+            },
+          });
+        }
+      }
+    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -237,10 +268,19 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
       formData.append('isPublic', (metadata.isPublic || false).toString());
       formData.append('category', metadata.category || detectFileCategory(file.type));
 
-      // Create XMLHttpRequest for progress tracking
-      const xhr = new XMLHttpRequest();
+      let currentToken = token;
       
-      const uploadPromise = new Promise<UploadResult>((resolve, reject) => {
+      if (!currentToken && refreshTokenFromBackend) {
+        currentToken = await refreshTokenFromBackend();
+      }
+
+      if (!currentToken) {
+        throw new Error('Authentication required. Please disconnect and reconnect your wallet.');
+      }
+      
+      const executeUpload = () => new Promise<UploadResult>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
         xhr.upload.addEventListener('progress', (event) => {
           if (event.lengthComputable) {
             const progress = Math.round((event.loaded / event.total) * 100);
@@ -274,14 +314,82 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
         });
 
         xhr.open('POST', '/api/files/upload');
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.setRequestHeader('Authorization', `Bearer ${currentToken}`);
         xhr.setRequestHeader('X-Wallet-Address', walletAddress!);
         xhr.send(formData);
       });
 
-      const result = await uploadPromise;
+      let result: UploadResult;
+      try {
+        result = await executeUpload();
+      } catch (err: any) {
+        if (err.message.includes('expired') && refreshTokenFromBackend) {
+          showToast('Session expired, refreshing...', 'info');
+          const newToken = await refreshTokenFromBackend();
+          if (newToken) {
+            currentToken = newToken;
+            result = await executeUpload();
+          } else {
+            throw err;
+          }
+        } else {
+          throw err;
+        }
+      }
       
-      showToast(`${file.name} uploaded successfully!`, 'success');
+      showToast(`${file.name} uploaded successfully off-chain!`, 'success');
+
+      if (result.fileHash && anchorWallet) {
+        showToast('Initiating Solana transaction...', 'info');
+        try {
+          const provider = new anchor.AnchorProvider(
+            connection,
+            anchorWallet as any,
+            { commitment: 'confirmed' }
+          );
+          
+          const program = new anchor.Program(idl as any, provider);
+          
+          // fileHash from backend is hex string, convert to Buffer/Array
+          const fileHashBuffer = Buffer.from(result.fileHash, 'hex');
+          const fileHashArray = Array.from(fileHashBuffer);
+          
+          const [userAccountPDA] = PublicKey.findProgramAddressSync(
+            [Buffer.from("user"), anchorWallet.publicKey.toBuffer()],
+            program.programId
+          );
+          
+          const [fileRecordPDA] = PublicKey.findProgramAddressSync(
+            [
+              Buffer.from("file"),
+              anchorWallet.publicKey.toBuffer(),
+              fileHashBuffer
+            ],
+            program.programId
+          );
+          
+          const tx = await program.methods.uploadFile(
+            fileHashArray,
+            result.ipfsHash,
+            "", // encrypted metadata (not fully implemented yet)
+            new anchor.BN(result.fileSize),
+            result.contentType || "application/octet-stream",
+            metadata.description || ""
+          ).accounts({
+            // @ts-ignore
+            userAccount: userAccountPDA,
+            fileRecord: fileRecordPDA,
+            authority: anchorWallet.publicKey,
+            systemProgram: anchor.web3.SystemProgram.programId,
+          }).rpc();
+
+          showToast(`Transaction successful!`, 'success');
+          result.transactionSignature = tx;
+        } catch (txError: any) {
+          console.error("Solana tx failed", txError);
+          showToast(`Solana transaction failed: ${txError.message}. File is still stored off-chain.`, 'warning');
+        }
+      }
       
       // Refresh files list
       await fetchFiles(true);

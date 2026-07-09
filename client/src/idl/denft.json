@@ -1,0 +1,1155 @@
+{
+  "address": "5qn8ATmqwgS3dfaDw4me5vGo3mjc6SH5souuCDwYLzCV",
+  "metadata": {
+    "name": "denft",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "delete_file",
+      "docs": [
+        "Updates user storage statistics and marks file as inactive"
+      ],
+      "discriminator": [
+        60,
+        149,
+        33,
+        105,
+        184,
+        39,
+        230,
+        235
+      ],
+      "accounts": [
+        {
+          "name": "user_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "file_record",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "grant_access",
+      "docs": [
+        "Grant access to a file for another user",
+        "Creates AccessPermission record with specific permissions and expiration"
+      ],
+      "discriminator": [
+        66,
+        88,
+        87,
+        113,
+        39,
+        22,
+        27,
+        165
+      ],
+      "accounts": [
+        {
+          "name": "file_record"
+        },
+        {
+          "name": "access_permission",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  101,
+                  115,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "file_record"
+              },
+              {
+                "kind": "account",
+                "path": "accessor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "accessor"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "accessor",
+          "type": "pubkey"
+        },
+        {
+          "name": "permissions",
+          "type": "u8"
+        },
+        {
+          "name": "expires_at",
+          "type": {
+            "option": "i64"
+          }
+        },
+        {
+          "name": "max_downloads",
+          "type": {
+            "option": "u32"
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize_user",
+      "discriminator": [
+        111,
+        17,
+        185,
+        250,
+        60,
+        122,
+        38,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "record_file_access",
+      "docs": [
+        "Record file access for audit trail",
+        "Updates download statistics and logs access"
+      ],
+      "discriminator": [
+        121,
+        10,
+        72,
+        146,
+        233,
+        94,
+        187,
+        194
+      ],
+      "accounts": [
+        {
+          "name": "file_record",
+          "writable": true
+        },
+        {
+          "name": "access_permission",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "access_type",
+          "type": {
+            "defined": {
+              "name": "AccessType"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "revoke_access",
+      "docs": [
+        "Revoke access to a file for a specific user",
+        "Marks AccessPermission as inactive"
+      ],
+      "discriminator": [
+        106,
+        128,
+        38,
+        169,
+        103,
+        238,
+        102,
+        147
+      ],
+      "accounts": [
+        {
+          "name": "file_record"
+        },
+        {
+          "name": "access_permission",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  101,
+                  115,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "file_record"
+              },
+              {
+                "kind": "account",
+                "path": "access_permission.accessor",
+                "account": "AccessPermission"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_file_publicity",
+      "docs": [
+        "Update file publicity for verification",
+        "Allows/disallows public verification without account"
+      ],
+      "discriminator": [
+        255,
+        228,
+        133,
+        55,
+        62,
+        226,
+        98,
+        30
+      ],
+      "accounts": [
+        {
+          "name": "file_record",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "is_public",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "upload_file",
+      "docs": [
+        "Upload a new file to the platform",
+        "Creates FileRecord with encrypted metadata and IPFS reference"
+      ],
+      "discriminator": [
+        120,
+        194,
+        210,
+        153,
+        71,
+        162,
+        78,
+        229
+      ],
+      "accounts": [
+        {
+          "name": "user_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "file_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "arg",
+                "path": "file_hash"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "file_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "ipfs_hash",
+          "type": "string"
+        },
+        {
+          "name": "encrypted_metadata",
+          "type": "string"
+        },
+        {
+          "name": "file_size",
+          "type": "u64"
+        },
+        {
+          "name": "content_type",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "verify_file",
+      "docs": [
+        "Verify file authenticity using file hash",
+        "Returns verification result with blockchain proof"
+      ],
+      "discriminator": [
+        156,
+        92,
+        144,
+        96,
+        95,
+        22,
+        25,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "file_record",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "file_record.owner",
+                "account": "FileRecord"
+              },
+              {
+                "kind": "arg",
+                "path": "file_hash"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "file_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "AccessPermission",
+      "discriminator": [
+        34,
+        37,
+        11,
+        32,
+        226,
+        12,
+        217,
+        33
+      ]
+    },
+    {
+      "name": "FileRecord",
+      "discriminator": [
+        112,
+        46,
+        49,
+        238,
+        12,
+        221,
+        189,
+        126
+      ]
+    },
+    {
+      "name": "UserAccount",
+      "discriminator": [
+        211,
+        33,
+        136,
+        16,
+        186,
+        110,
+        242,
+        127
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "AccessGranted",
+      "discriminator": [
+        21,
+        212,
+        83,
+        192,
+        198,
+        26,
+        62,
+        185
+      ]
+    },
+    {
+      "name": "AccessRevoked",
+      "discriminator": [
+        200,
+        160,
+        73,
+        43,
+        201,
+        165,
+        43,
+        159
+      ]
+    },
+    {
+      "name": "FileAccessed",
+      "discriminator": [
+        96,
+        171,
+        73,
+        183,
+        17,
+        224,
+        243,
+        9
+      ]
+    },
+    {
+      "name": "FileDeleted",
+      "discriminator": [
+        98,
+        39,
+        99,
+        226,
+        140,
+        27,
+        92,
+        248
+      ]
+    },
+    {
+      "name": "FilePublicityUpdated",
+      "discriminator": [
+        117,
+        148,
+        188,
+        56,
+        215,
+        215,
+        94,
+        58
+      ]
+    },
+    {
+      "name": "FileUploaded",
+      "discriminator": [
+        140,
+        84,
+        14,
+        57,
+        243,
+        206,
+        119,
+        244
+      ]
+    },
+    {
+      "name": "FileVerified",
+      "discriminator": [
+        9,
+        233,
+        107,
+        91,
+        185,
+        77,
+        11,
+        168
+      ]
+    },
+    {
+      "name": "UserInitialized",
+      "discriminator": [
+        66,
+        195,
+        5,
+        223,
+        42,
+        84,
+        135,
+        60
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidFileSize",
+      "msg": "Invalid file size. Must be between 1 byte and 10MB."
+    },
+    {
+      "code": 6001,
+      "name": "IpfsHashTooLong",
+      "msg": "IPFS hash too long. Maximum 100 characters."
+    },
+    {
+      "code": 6002,
+      "name": "ContentTypeTooLong",
+      "msg": "Content type too long. Maximum 100 characters."
+    },
+    {
+      "code": 6003,
+      "name": "DescriptionTooLong",
+      "msg": "Description too long. Maximum 500 characters."
+    },
+    {
+      "code": 6004,
+      "name": "FileLimitExceeded",
+      "msg": "File limit exceeded. Maximum 1GB per user."
+    },
+    {
+      "code": 6005,
+      "name": "StorageLimitExceeded",
+      "msg": "Storage limit exceeded. Maximum 1GB per user."
+    },
+    {
+      "code": 6006,
+      "name": "InvalidPermissions",
+      "msg": "Invalid permissions. Must be between 1 and 7."
+    },
+    {
+      "code": 6007,
+      "name": "InvalidExpirationTime",
+      "msg": "Invalid expiration time. Must be in the future."
+    },
+    {
+      "code": 6008,
+      "name": "AccessAlreadyRevoked",
+      "msg": "Access already revoked."
+    },
+    {
+      "code": 6009,
+      "name": "FileHashMismatch",
+      "msg": "File has mismatch. File may have been tempered with."
+    },
+    {
+      "code": 6010,
+      "name": "FileNotActive",
+      "msg": "File is not active."
+    },
+    {
+      "code": 6011,
+      "name": "AccessRevoked",
+      "msg": "Access has been revoked."
+    },
+    {
+      "code": 6012,
+      "name": "AccessExpired",
+      "msg": "Access has expired."
+    },
+    {
+      "code": 6013,
+      "name": "DownloadLimitExceeded",
+      "msg": "Download limit exceeded."
+    },
+    {
+      "code": 6014,
+      "name": "FileAlreadyDeleted",
+      "msg": "File already deleted."
+    },
+    {
+      "code": 6015,
+      "name": "Unauthorized",
+      "msg": "Unauthorized operation."
+    },
+    {
+      "code": 6016,
+      "name": "UserAccountInactive",
+      "msg": "User account is inactive."
+    },
+    {
+      "code": 6017,
+      "name": "InvalidAccessPermission",
+      "msg": "Invalid access permission."
+    }
+  ],
+  "types": [
+    {
+      "name": "AccessGranted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "file_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "accessor",
+            "type": "pubkey"
+          },
+          {
+            "name": "permissions",
+            "type": "u8"
+          },
+          {
+            "name": "granted_at",
+            "type": "i64"
+          },
+          {
+            "name": "expires_at",
+            "type": {
+              "option": "i64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "AccessPermission",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "file_record",
+            "type": "pubkey"
+          },
+          {
+            "name": "accessor",
+            "type": "pubkey"
+          },
+          {
+            "name": "permissions",
+            "type": "u8"
+          },
+          {
+            "name": "granted_at",
+            "type": "i64"
+          },
+          {
+            "name": "expires_at",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "max_downloads",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "used_downloads",
+            "type": "u32"
+          },
+          {
+            "name": "granted_by",
+            "type": "pubkey"
+          },
+          {
+            "name": "is_active",
+            "type": "bool"
+          },
+          {
+            "name": "revoked_at",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "AccessRevoked",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "file_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "accessor",
+            "type": "pubkey"
+          },
+          {
+            "name": "revoked_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AccessType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Read"
+          },
+          {
+            "name": "Download"
+          },
+          {
+            "name": "Share"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FileAccessed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "file_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "accessor",
+            "type": "pubkey"
+          },
+          {
+            "name": "access_type",
+            "type": "u8"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FileDeleted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "file_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "deleted_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FilePublicityUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "file_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "is_public",
+            "type": "bool"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FileRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "file_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "ipfs_hash",
+            "type": "string"
+          },
+          {
+            "name": "encrypted_metadata",
+            "type": "string"
+          },
+          {
+            "name": "file_size",
+            "type": "u64"
+          },
+          {
+            "name": "content_type",
+            "type": "string"
+          },
+          {
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "is_public_verification",
+            "type": "bool"
+          },
+          {
+            "name": "access_count",
+            "type": "u64"
+          },
+          {
+            "name": "download_count",
+            "type": "u64"
+          },
+          {
+            "name": "is_active",
+            "type": "bool"
+          },
+          {
+            "name": "deleted_at",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "verification_id",
+            "type": "u64"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "FileUploaded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "file_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "file_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "ipfs_hash",
+            "type": "string"
+          },
+          {
+            "name": "file_size",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "verification_id",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FileVerified",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "file_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "verifier",
+            "type": "pubkey"
+          },
+          {
+            "name": "file_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "verified_at",
+            "type": "i64"
+          },
+          {
+            "name": "original_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "verification_id",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "file_count",
+            "type": "u32"
+          },
+          {
+            "name": "storage_used",
+            "type": "u64"
+          },
+          {
+            "name": "storage_limit",
+            "type": "u64"
+          },
+          {
+            "name": "file_limit",
+            "type": "u32"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "is_active",
+            "type": "bool"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserInitialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ],
+  "constants": [
+    {
+      "name": "MAX_FILES_PER_USER",
+      "type": "u32",
+      "value": "100"
+    }
+  ]
+}

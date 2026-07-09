@@ -34,10 +34,12 @@ export const uploadFile = async (req: Request, res: Response) => {
       success: true,
       fileId: record.id,
       ipfsHash: record.ipfsHash,
+      fileHash: record.fileHash,
+      onChainStatus: record.onChainStatus,
       fileSize: Number(record.fileSize),
       contentType: record.contentType,
       uploadedAt: record.uploadedAt.getTime(),
-      processingStatus: 'completed'
+      processingStatus: 'pending'
     });
   } catch (error: any) {
     log.error({ err: error }, 'Upload file failed');

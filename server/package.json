@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
     "@prisma/client": "^6.10.1",
     "@solana/web3.js": "^1.98.0",
     "bs58": "^6.0.0",

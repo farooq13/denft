@@ -13,6 +13,8 @@ import { createModuleLogger } from './lib/logger.js';
 // Route imports
 import authRoutes from './modules/auth/auth.routes.js';
 import fileRoutes from './modules/file/file.routes.js';
+import verifyRoutes from './modules/verify/verify.routes.js';
+import { initSolanaListener } from './services/solanaListener.js';
 
 const log = createModuleLogger('app');
 
@@ -101,6 +103,7 @@ export function createApp() {
 
   app.use('/api/auth', authRoutes);
   app.use('/api/files', fileRoutes);
+  app.use('/api/verify/file', verifyRoutes);
 
   // ────────────────────────────────────────────
   // Error Handling (must be after routes)

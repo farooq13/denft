@@ -38,6 +38,7 @@ interface WalletContextType {
   refreshBalance: () => Promise<void>;
   clearError: () => void;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
+  refreshTokenFromBackend: () => Promise<string | null>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -315,6 +316,31 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
     }
   }, [walletSignMessage, showToast]);
 
+  // Refresh token
+  const refreshTokenFromBackend = useCallback(async (): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to refresh token');
+      
+      const data = await response.json();
+      const newToken = data.data.accessToken;
+      
+      setToken(newToken);
+      
+      const stored = localStorage.getItem('denft-auth');
+      if (stored) {
+         const parsed = JSON.parse(stored);
+         parsed.token = newToken;
+         localStorage.setItem('denft-auth', JSON.stringify(parsed));
+      }
+      
+      return newToken;
+    } catch (err) {
+      console.warn('Refresh token failed:', err);
+      return null;
+    }
+  }, []);
+
   // Refresh wallet balance
   const refreshBalance = useCallback(async () => {
     if (!publicKey || !connected) return;
@@ -426,6 +452,7 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
     refreshBalance,
     clearError,
     showToast,
+    refreshTokenFromBackend,
   };
 
   return (

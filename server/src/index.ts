@@ -7,6 +7,11 @@ import { disconnectRedis } from './lib/redis.js';
 const app = createApp();
 
 
+import { initSolanaListener } from './services/solanaListener.js';
+
+// Initialize Background Services
+initSolanaListener();
+
 // Start Server
 
 const server = app.listen(env.PORT, () => {
