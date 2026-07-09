@@ -37,6 +37,10 @@ const envSchema = z.object({
   // CORS
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 
+  // Pinata IPFS
+  PINATA_JWT: z.string().min(10, 'PINATA_JWT is required for IPFS pinning'),
+  PINATA_GATEWAY: z.string().url().default('https://gateway.pinata.cloud'),
+
   // Nonce TTL (seconds)
   NONCE_TTL: z.coerce.number().default(300),
 });

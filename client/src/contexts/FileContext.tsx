@@ -206,7 +206,10 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Request failed with status: ${response.status}`);
+      const errorMsg = errorData.error && typeof errorData.error === 'object' 
+        ? errorData.error.message 
+        : errorData.error;
+      throw new Error(errorMsg || `Request failed with status: ${response.status}`);
     }
 
     return response;
@@ -256,7 +259,10 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
           } else {
             try {
               const errorData = JSON.parse(xhr.responseText);
-              reject(new Error(errorData.error || 'Upload failed'));
+              const errorMsg = errorData.error && typeof errorData.error === 'object'
+                ? errorData.error.message
+                : errorData.error;
+              reject(new Error(errorMsg || 'Upload failed'));
             } catch (error) {
               reject(new Error(`Upload failed with status: ${xhr.status}`));
             }

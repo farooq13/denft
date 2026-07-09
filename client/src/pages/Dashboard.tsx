@@ -1,7 +1,3 @@
-// src/pages/Dashboard.tsx
-// Sprint 3 — Dashboard with stats, storage breakdown, activity charts.
-// Completely removed NextUI. Uses Skeleton during load.
-
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -37,7 +33,7 @@ import { DashboardSkeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatFileSize } from '@/lib/utils'
 
-// ── Mock Data ──────────────────────────────────────────────────
+//  Mock Data 
 
 const generateMockAnalytics = () => {
   return Array.from({ length: 7 }, (_, i) => {
@@ -84,7 +80,7 @@ const QUICK_ACTIONS = [
   },
 ]
 
-// ── Dashboard Component ───────────────────────────────────────
+//  Dashboard Component 
 
 export function Dashboard() {
   const navigate = useNavigate()
@@ -165,7 +161,7 @@ export function Dashboard() {
     <PageTransition>
       <div className="space-y-8 animate-fade-in">
         
-        {/* ── Welcome Header ──────────────────────────────────────── */}
+        {/*  Welcome Header  */}
         <Card variant="elevated" className="relative overflow-hidden border-primary-500/20 bg-gradient-to-r from-neutral-900 to-neutral-800">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" aria-hidden="true" />
           <CardBody className="p-8 relative z-10">
@@ -178,7 +174,7 @@ export function Dashboard() {
                 />
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold text-neutral-50 mb-1">
-                    Welcome back! 👋
+                    Welcome back!
                   </h1>
                   <p className="text-neutral-400 text-sm">
                     Connected as <span className="text-primary-400 font-mono">{walletAddress?.slice(0, 8)}…{walletAddress?.slice(-4)}</span>
@@ -204,7 +200,7 @@ export function Dashboard() {
           </CardBody>
         </Card>
 
-        {/* ── Quick Stats ─────────────────────────────────────────── */}
+        {/*  Quick Stats  */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { label: 'Total Files', value: quickStats.totalFiles, icon: Files, color: 'text-primary-400', bg: 'bg-primary-500/10' },
@@ -228,7 +224,7 @@ export function Dashboard() {
           ))}
         </div>
 
-        {/* ── Main Grid ───────────────────────────────────────────── */}
+        {/*  Main Grid  */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* LEFT COLUMN */}

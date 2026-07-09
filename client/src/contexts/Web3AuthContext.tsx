@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode, useCallback, useRef } from 'react';
 import { Web3AuthNoModal } from '@web3auth/no-modal';
 import { SolanaPrivateKeyProvider } from '@web3auth/solana-provider';
 import { useWallet } from './WalletContext';

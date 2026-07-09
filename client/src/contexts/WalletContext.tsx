@@ -137,13 +137,16 @@ const WalletProviderInner: React.FC<WalletProviderProps> = ({ children }) => {
       // Connect to the selected wallet
       await connect();
       
-      if (!publicKey) {
+      // Use the adapter's publicKey as the state might not be updated in this closure yet
+      const currentPublicKey = wallet.adapter.publicKey || publicKey;
+      
+      if (!currentPublicKey) {
         throw new Error('Failed to get wallet public key');
       }
 
       // Authenticate with backend (optional)
       try {
-        await authenticateWallet(publicKey, wallet.adapter.name);
+        await authenticateWallet(currentPublicKey, wallet.adapter.name);
       } catch (authError) {
         console.warn('Authentication failed, continuing without backend auth:', authError);
       }
