@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// User — mirrors on-chain UserAccount
+
+model User {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique @map("wallet_address")
+  displayName   String?  @map("display_name")
+  avatarUrl     String?  @map("avatar_url")
+  fileCount     Int      @default(0) @map("file_count")
+  storageUsed   BigInt   @default(0) @map("storage_used")
+  storageLimit   BigInt   @default(1073741824) @map("storage_limit") // 1 GB
+  fileLimit      Int      @default(100) @map("file_limit")
+  isActive       Boolean  @default(true) @map("is_active")
+  theme          String   @default("system")
+  viewMode       String   @default("grid") @map("view_mode")
+  viewingPasscode String? @map("viewing_passcode")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  files      File[]
+  sessions   Session[]
+  auditLogs  AuditLog[]
+
+  @@index([walletAddress])
+  @@map("users")
+}
+
+// File — mirrors on-chain FileRecord
+
+model File {
+  id                String    @id @default(cuid())
+  owner             User      @relation(fields: [ownerWallet], references: [walletAddress], onDelete: Cascade)
+  ownerWallet       String    @map("owner_wallet")
+  fileHash          String    @map("file_hash") // hex-encoded SHA-256
+  ipfsHash          String    @map("ipfs_hash")
+  encryptedMetadata String?   @map("encrypted_metadata")
+  fileName          String    @map("file_name")
+  fileSize          BigInt    @map("file_size")
+  contentType       String    @map("content_type")
+  description       String?   @default("") @map("description")
+  category          String    @default("other")
+  tags              String[]  @default([])
+  isPublic          Boolean   @default(false) @map("is_public")
+  isFavorite        Boolean   @default(false) @map("is_favorite")
+  accessCount       Int       @default(0) @map("access_count")
+  downloadCount     Int       @default(0) @map("download_count")
+  isActive          Boolean   @default(true) @map("is_active")
+  onChainStatus     String    @default("pending") @map("on_chain_status") // pending | confirmed | failed
+  solanaSignature   String?   @map("solana_signature")
+  uploadedAt        DateTime  @default(now()) @map("uploaded_at")
+  deletedAt         DateTime? @map("deleted_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([ownerWallet])
+  @@index([uploadedAt])
+  @@index([isPublic])
+  @@index([category])
+  @@map("files")
+}
+
+// Session — refresh token tracking for JWT auth
+
+model Session {
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String   @map("user_id")
+  refreshToken  String   @unique @map("refresh_token") // hashed
+  walletAddress String   @map("wallet_address")
+  walletName    String?  @map("wallet_name")
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  expiresAt     DateTime @map("expires_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([refreshToken])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// AuditLog — tracks destructive actions like Danger Zone wipe
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  action    String
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  signature String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("audit_logs")
+}

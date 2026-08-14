@@ -21,8 +21,4 @@ Denft is a decentralized cloud storage platform that combines the familiar user 
 ### Target Users
 - **Web3 Developers**: Secure storage for documentation, and project files
 - **DAOs**: Governance documents, proposals, and transparent record-keeping
-- **Privacy-Concious Professionals**: Sensitive documents requiring verification
-
-
-
-
+- **Privacy-Concious Professionals**: Sensitive documents requiring verifi

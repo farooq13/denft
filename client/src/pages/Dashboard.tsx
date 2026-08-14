@@ -1,15 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Button,
-  Progress,
-  Chip,
-  Avatar,
-  Divider,
-} from '@nextui-org/react';
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Upload,
   Files,
@@ -21,7 +11,6 @@ import {
   Clock,
   HardDrive,
   Activity,
-  Users,
   Star,
   ArrowRight,
   Plus,
@@ -31,736 +20,475 @@ import {
   Music,
   Archive,
   Zap,
-} from 'lucide-react';
-import { useWallet } from '../contexts/WalletContext';
-import { useFiles } from '../contexts/FileContext';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+} from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { useWallet } from '@/contexts/WalletContext'
+import { useFiles } from '@/contexts/FileContext'
+import { PageTransition } from '@/components/ui/page-transition'
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { DashboardSkeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
+import { formatFileSize } from '@/lib/utils'
 
-// Mock analytics data (replace with real API calls)
-const generateMockAnalytics = () => {
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (6 - i));
-    return {
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      uploads: Math.floor(Math.random() * 10) + 1,
-      downloads: Math.floor(Math.random() * 20) + 5,
-      views: Math.floor(Math.random() * 50) + 10,
-    };
-  });
-  return days;
-};
+//  Mock Data 
 
-// Storage breakdown data
-const storageBreakdown = [
-  { name: 'Documents', value: 35, color: '#3B82F6' },
-  { name: 'Images', value: 28, color: '#8B5CF6' },
-  { name: 'Videos', value: 20, color: '#EC4899' },
-  { name: 'Audio', value: 12, color: '#10B981' },
-  { name: 'Other', value: 5, color: '#F59E0B' },
-];
+// Removed mock data generators
 
-export const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const { walletAddress, balance, walletName } = useWallet();
-  const { 
-    files, 
-    recentFiles, 
-    favoriteFiles, 
-    isLoading, 
-    totalStorage, 
+const QUICK_ACTIONS = [
+  {
+    title: 'Upload Files',
+    description: 'Add new files to your secure storage',
+    icon: Upload,
+    color: 'from-primary-500 to-primary-600',
+    path: '/upload',
+  },
+  {
+    title: 'Verify File',
+    description: 'Check file authenticity on blockchain',
+    icon: Shield,
+    color: 'from-success-500 to-success-600',
+    path: '/verify',
+  },
+  {
+    title: 'Browse Files',
+    description: 'Manage your uploaded files',
+    icon: Files,
+    color: 'from-accent-500 to-accent-600',
+    path: '/files',
+  },
+]
+
+//  Dashboard Component 
+
+export function Dashboard() {
+  const navigate = useNavigate()
+  const { walletAddress, balance, walletName, isAuthReady, token } = useWallet()
+  const {
+    files,
+    recentFiles,
+    isLoading,
+    error,
+    totalStorage,
     usedStorage,
     fetchFiles,
-    getStorageAnalytics 
-  } = useFiles();
+    getStorageAnalytics,
+    getDashboardAnalytics,
+  } = useFiles()
 
-  const [analyticsData, setAnalyticsData] = useState(generateMockAnalytics());
-  const [storageAnalytics, setStorageAnalytics] = useState<any>(null);
+  const [analyticsData, setAnalyticsData] = useState<any[]>([])
+  const [storageData, setStorageData] = useState<any[]>([])
+  const [isInitialising, setIsInitialising] = useState(true)
   const [quickStats, setQuickStats] = useState({
     totalFiles: 0,
     totalDownloads: 0,
     totalViews: 0,
     filesShared: 0,
-  });
+  })
 
-  // Calculate storage percentage
-  const storagePercentage = totalStorage > 0 ? (usedStorage / totalStorage) * 100 : 0;
+  const storagePercentage = totalStorage > 0 ? (usedStorage / totalStorage) * 100 : 0
+  const progressColor = storagePercentage > 80 ? 'error' : storagePercentage > 60 ? 'warning' : 'success'
 
-  // Format file size
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-  };
-
-  // Load dashboard data
   useEffect(() => {
+    let mounted = true
     const loadDashboardData = async () => {
       try {
-        await fetchFiles(true);
+        await fetchFiles(0, 5) // Fetch first page for recent files
         
-        // Load storage analytics
-        const analytics = await getStorageAnalytics();
-        if (analytics) {
-          setStorageAnalytics(analytics);
+        const [storageRes, dashboardRes] = await Promise.all([
+          getStorageAnalytics(),
+          getDashboardAnalytics()
+        ])
+        
+        if (mounted) {
+          if (storageRes?.data?.storageBreakdown) {
+            const colors = ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B']
+            const coloredBreakdown = storageRes.data.storageBreakdown.map((item: any, i: number) => ({
+              ...item,
+              // Convert absolute bytes to percentage value for PieChart
+              value: totalStorage > 0 ? Number(((item.value / totalStorage) * 100).toFixed(1)) : 0,
+              color: colors[i % colors.length]
+            })).filter((item: any) => item.value > 0)
+            setStorageData(coloredBreakdown)
+          }
+
+          if (dashboardRes?.data) {
+            setAnalyticsData(dashboardRes.data.history)
+            setQuickStats({
+              totalFiles: dashboardRes.data.totalFiles,
+              totalDownloads: dashboardRes.data.totalDownloads,
+              totalViews: dashboardRes.data.totalViews,
+              filesShared: dashboardRes.data.filesShared,
+            })
+          }
         }
-
-        // Calculate quick stats from files
-        const stats = files.reduce((acc, file) => ({
-          totalFiles: acc.totalFiles + 1,
-          totalDownloads: acc.totalDownloads + parseInt(file.downloadCount || '0'),
-          totalViews: acc.totalViews + parseInt(file.accessCount || '0'),
-          filesShared: acc.filesShared + (file.sharingSettings.isShared ? 1 : 0),
-        }), {
-          totalFiles: 0,
-          totalDownloads: 0,
-          totalViews: 0,
-          filesShared: 0,
-        });
-
-        setQuickStats(stats);
-
       } catch (error) {
-        console.error('Failed to load dashboard data:', error);
+        console.error('Failed to load dashboard data:', error)
+      } finally {
+        if (mounted) setIsInitialising(false)
       }
-    };
-
-    if (walletAddress) {
-      loadDashboardData();
     }
-  }, [walletAddress, fetchFiles, getStorageAnalytics]);
+    if (walletAddress && isAuthReady && token) loadDashboardData()
+    return () => { mounted = false }
+  }, [walletAddress, isAuthReady, token, fetchFiles, getStorageAnalytics, getDashboardAnalytics])
 
-  // Quick action cards
-  const quickActions = [
-    {
-      title: 'Upload Files',
-      description: 'Add new files to your secure storage',
-      icon: Upload,
-      color: 'from-blue-500 to-cyan-500',
-      action: () => navigate('/upload'),
-    },
-    {
-      title: 'Verify File',
-      description: 'Check file authenticity on blockchain',
-      icon: Shield,
-      color: 'from-green-500 to-emerald-500',
-      action: () => navigate('/verify'),
-    },
-    {
-      title: 'Browse Files',
-      description: 'Manage your uploaded files',
-      icon: Files,
-      color: 'from-purple-500 to-pink-500',
-      action: () => navigate('/files'),
-    },
-  ];
+  if (isLoading || isInitialising) {
+    return <DashboardSkeleton />
+  }
+
+  if (error && files.length === 0) {
+    return (
+      <div className="pt-10">
+        <EmptyState 
+          icon={<Activity className="h-12 w-12" />}
+          title="Failed to load dashboard"
+          description={error}
+          action={{
+            label: "Try Again",
+            onClick: () => fetchFiles(true)
+          }}
+        />
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Header */}
-      <div className="relative">
-        <Card className="border border-slate-700 bg-gradient-to-r from-slate-800/50 to-slate-900/50 backdrop-blur-xl overflow-hidden">
-          <CardBody className="p-8">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
-              <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                <Avatar
-                  size="lg"
+    <PageTransition>
+      <div className="space-y-8 animate-fade-in">
+        
+        {/*  Welcome Header  */}
+        <Card variant="elevated" className="relative overflow-hidden border-primary-500/20 bg-gradient-to-r from-neutral-900 to-neutral-800">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" aria-hidden="true" />
+          <CardBody className="p-8 relative z-10">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="flex items-center gap-5">
+                <img
                   src={`https://ui-avatars.com/api/?name=${walletName}&background=3B82F6&color=fff`}
-                  className="ring-4 ring-blue-500/30"
+                  alt="Avatar"
+                  className="w-16 h-16 rounded-full border-2 border-primary-500/30"
                 />
                 <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">
-                    Welcome back! 👋
+                  <h1 className="text-2xl md:text-3xl font-bold text-neutral-50 mb-1">
+                    Welcome back!
                   </h1>
-                  <p className="text-slate-400">
-                    Connected as <span className="text-blue-400 font-mono">{walletAddress?.slice(0, 8)}...{walletAddress?.slice(-4)}</span>
+                  <p className="text-neutral-400 text-sm">
+                    Connected as <span className="text-primary-400 font-mono">{walletAddress?.slice(0, 8)}…{walletAddress?.slice(-4)}</span>
                   </p>
-                  <div className="flex items-center space-x-4 mt-2">
-                    <Chip size="sm" color="success" variant="flat">
-                      {walletName}
-                    </Chip>
-                    <span className="text-sm text-slate-400">
-                      Balance: <span className="text-blue-400 font-semibold">{balance.toFixed(4)} SOL</span>
+                  <div className="flex items-center gap-3 mt-3">
+                    <Badge variant="success" size="sm">{walletName}</Badge>
+                    <span className="text-sm text-neutral-400 font-medium">
+                      Balance: <span className="text-primary-400">{balance.toFixed(4)} SOL</span>
                     </span>
                   </div>
                 </div>
               </div>
               
-              <div className="flex space-x-3">
-                <Button
-                  color="primary"
-                  variant="solid"
-                  startContent={<Upload className="w-4 h-4" />}
-                  onPress={() => navigate('/upload')}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                >
-                  Upload Files
-                </Button>
-              </div>
+              <Button
+                variant="primary"
+                leftIcon={<Upload className="h-4 w-4" />}
+                onClick={() => navigate('/upload')}
+                className="shrink-0"
+              >
+                Upload Files
+              </Button>
             </div>
-
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           </CardBody>
         </Card>
-      </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Total Files', value: quickStats.totalFiles, icon: Files, color: 'text-blue-400', bg: 'from-blue-600/20 to-cyan-600/20' },
-          { label: 'Total Downloads', value: quickStats.totalDownloads, icon: Download, color: 'text-green-400', bg: 'from-green-600/20 to-emerald-600/20' },
-          { label: 'Total Views', value: quickStats.totalViews, icon: Eye, color: 'text-purple-400', bg: 'from-purple-600/20 to-pink-600/20' },
-          { label: 'Files Shared', value: quickStats.filesShared, icon: Share2, color: 'text-orange-400', bg: 'from-orange-600/20 to-red-600/20' },
-        ].map((stat, index) => {
-          const Icon = stat.icon;
-          
-          return (
-            <Card key={stat.label} className="border border-slate-700 bg-slate-800/30 backdrop-blur-xl hover:bg-slate-800/50 transition-all duration-300 hover:scale-105">
+        {/*  Quick Stats  */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { label: 'Total Files', value: quickStats.totalFiles, icon: Files, color: 'text-primary-400', bg: 'bg-primary-500/10' },
+            { label: 'Total Downloads', value: quickStats.totalDownloads, icon: Download, color: 'text-success-400', bg: 'bg-success-500/10' },
+            { label: 'Total Views', value: quickStats.totalViews, icon: Eye, color: 'text-accent-400', bg: 'bg-accent-500/10' },
+            { label: 'Files Shared', value: quickStats.filesShared, icon: Share2, color: 'text-warning-400', bg: 'bg-warning-500/10' },
+          ].map(stat => (
+            <Card key={stat.label} variant="ghost">
               <CardBody className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-slate-400 text-sm font-medium mb-1">{stat.label}</p>
-                    <p className="text-2xl font-bold text-white">{stat.value.toLocaleString()}</p>
+                    <p className="text-neutral-400 text-sm font-medium mb-1">{stat.label}</p>
+                    <p className="text-2xl font-bold text-neutral-50">{stat.value.toLocaleString()}</p>
                   </div>
-                  <div className={`p-3 rounded-xl bg-gradient-to-r ${stat.bg}`}>
-                    <Icon className={`w-6 h-6 ${stat.color}`} />
+                  <div className={`p-3 rounded-xl ${stat.bg}`}>
+                    <stat.icon className={`h-6 w-6 ${stat.color}`} aria-hidden="true" />
                   </div>
                 </div>
               </CardBody>
             </Card>
-          );
-        })}
-      </div>
-
-      {/* Main Dashboard Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Storage Overview */}
-          <Card className="border border-slate-700 bg-slate-800/30 backdrop-blur-xl">
-            <CardHeader className="pb-0">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg">
-                    <HardDrive className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">Storage Usage</h3>
-                    <p className="text-sm text-slate-400">
-                      {formatFileSize(usedStorage)} of {formatFileSize(totalStorage)} used
-                    </p>
-                  </div>
-                </div>
-                <Chip color={storagePercentage > 80 ? 'danger' : storagePercentage > 60 ? 'warning' : 'success'}>
-                  {storagePercentage.toFixed(1)}%
-                </Chip>
-              </div>
-            </CardHeader>
-            <CardBody className="pt-4">
-              <Progress
-                value={storagePercentage}
-                className="mb-4"
-                color={storagePercentage > 80 ? 'danger' : storagePercentage > 60 ? 'warning' : 'success'}
-                size="lg"
-              />
-              
-              {/* Storage breakdown */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
-                {storageBreakdown.map((item) => (
-                  <div key={item.name} className="text-center">
-                    <div 
-                      className="w-4 h-4 rounded-full mx-auto mb-2"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <p className="text-xs text-slate-400">{item.name}</p>
-                    <p className="text-sm font-semibold text-white">{item.value}%</p>
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Activity Chart */}
-          <Card className="border border-slate-700 bg-slate-800/30 backdrop-blur-xl">
-            <CardHeader className="pb-0">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-lg">
-                    <Activity className="w-5 h-5 text-green-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">Activity Overview</h3>
-                    <p className="text-sm text-slate-400">Last 7 days</p>
-                  </div>
-                </div>
-                <Button size="sm" variant="flat" startContent={<TrendingUp className="w-4 h-4" />}>
-                  View Details
-                </Button>
-              </div>
-            </CardHeader>
-            <CardBody>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={analyticsData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="date" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1E293B', 
-                      border: '1px solid #374151',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="uploads" 
-                    stroke="#3B82F6" 
-                    strokeWidth={3}
-                    dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="downloads" 
-                    stroke="#8B5CF6" 
-                    strokeWidth={3}
-                    dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 4 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="views" 
-                    stroke="#EC4899" 
-                    strokeWidth={3}
-                    dot={{ fill: '#EC4899', strokeWidth: 2, r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardBody>
-          </Card>
-
-          {/* Recent Files */}
-          <Card className="border border-slate-700 bg-slate-800/30 backdrop-blur-xl">
-            <CardHeader className="pb-0">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-lg">
-                    <Clock className="w-5 h-5 text-purple-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">Recent Files</h3>
-                    <p className="text-sm text-slate-400">Your latest uploads</p>
-                  </div>
-                </div>
-                <Button 
-                  size="sm" 
-                  variant="flat" 
-                  endContent={<ArrowRight className="w-4 h-4" />}
-                  onPress={() => navigate('/files')}
-                >
-                  View All
-                </Button>
-              </div>
-            </CardHeader>
-            <CardBody>
-              {recentFiles.length > 0 ? (
-                <div className="space-y-4">
-                  {recentFiles.slice(0, 5).map((file) => {
-                    const getFileIcon = () => {
-                      switch (file.category) {
-                        case 'image': return Image;
-                        case 'video': return Video;
-                        case 'audio': return Music;
-                        case 'document': return FileText;
-                        default: return Archive;
-                      }
-                    };
-                    
-                    const FileIcon = getFileIcon();
-                    
-                    return (
-                      <div key={file.fileId} className="flex items-center space-x-4 p-4 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-all duration-300 group cursor-pointer">
-                        <div className="p-2 bg-gradient-to-r from-slate-600 to-slate-500 rounded-lg group-hover:from-blue-600/20 group-hover:to-purple-600/20 transition-all duration-300">
-                          <FileIcon className="w-5 h-5 text-slate-300 group-hover:text-blue-400 transition-colors duration-300" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-white truncate">
-                            {file.fileName || `File ${file.fileId.slice(0, 8)}...`}
-                          </h4>
-                          <div className="flex items-center space-x-4 mt-1">
-                            <span className="text-sm text-slate-400">{file.fileSize}</span>
-                            <span className="text-sm text-slate-400">
-                              {new Date(file.uploadedAt).toLocaleDateString()}
-                            </span>
-                            {file.isPublic && (
-                              <Chip size="sm" color="success" variant="flat">Public</Chip>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <div className="flex items-center space-x-1 text-slate-500">
-                            <Eye className="w-4 h-4" />
-                            <span className="text-sm">{file.accessCount}</span>
-                          </div>
-                          {file.isFavorite && (
-                            <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="inline-flex p-4 bg-slate-700/30 rounded-full mb-4">
-                    <Files className="w-8 h-8 text-slate-400" />
-                  </div>
-                  <h4 className="text-lg font-medium text-white mb-2">No files yet</h4>
-                  <p className="text-slate-400 mb-6">Upload your first file to get started</p>
-                  <Button
-                    color="primary"
-                    startContent={<Upload className="w-4 h-4" />}
-                    onPress={() => navigate('/upload')}
-                  >
-                    Upload Now
-                  </Button>
-                </div>
-              )}
-            </CardBody>
-          </Card>
+          ))}
         </div>
 
-        {/* Right Column */}
-        <div className="space-y-8">
-          {/* Quick Actions */}
-          <Card className="border border-slate-700 bg-slate-800/30 backdrop-blur-xl">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-r from-orange-600/20 to-red-600/20 rounded-lg">
-                  <Zap className="w-5 h-5 text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Quick Actions</h3>
-                  <p className="text-sm text-slate-400">Common tasks</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-4">
-              {quickActions.map((action, index) => {
-                const Icon = action.icon;
-                
-                return (
-                  <Button
-                    key={action.title}
-                    variant="flat"
-                    className="w-full h-auto p-4 bg-slate-700/30 hover:bg-slate-700/50 border border-slate-600 hover:border-slate-500 transition-all duration-300 group"
-                    onPress={action.action}
-                  >
-                    <div className="flex items-center space-x-4 w-full">
-                      <div className={`p-2 rounded-lg bg-gradient-to-r ${action.color} bg-opacity-20 group-hover:scale-110 transition-transform duration-300`}>
-                        <Icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <h4 className="font-medium text-white">{action.title}</h4>
-                        <p className="text-sm text-slate-400">{action.description}</p>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors duration-300" />
-                    </div>
-                  </Button>
-                );
-              })}
-            </CardBody>
-          </Card>
-
-          {/* Storage Breakdown Chart */}
-          <Card className="border border-slate-700 bg-slate-800/30 backdrop-blur-xl">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-r from-indigo-600/20 to-blue-600/20 rounded-lg">
-                  <HardDrive className="w-5 h-5 text-indigo-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Storage Breakdown</h3>
-                  <p className="text-sm text-slate-400">By file type</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardBody>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={storageBreakdown}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {storageBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1E293B', 
-                      border: '1px solid #374151',
-                      borderRadius: '8px'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              
-              {/* Legend */}
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                {storageBreakdown.map((item) => (
-                  <div key={item.name} className="flex items-center space-x-2">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm text-slate-400">{item.name}</span>
-                    <span className="text-sm font-medium text-white">{item.value}%</span>
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Favorite Files */}
-          {favoriteFiles.length > 0 && (
-            <Card className="border border-slate-700 bg-slate-800/30 backdrop-blur-xl">
-              <CardHeader>
+        {/*  Main Grid  */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* LEFT COLUMN */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Storage Usage */}
+            <Card variant="default">
+              <CardHeader className="pb-2">
                 <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-gradient-to-r from-yellow-600/20 to-orange-600/20 rounded-lg">
-                      <Star className="w-5 h-5 text-yellow-400" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary-500/10 rounded-lg">
+                      <HardDrive className="h-5 w-5 text-primary-400" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white">Favorite Files</h3>
-                      <p className="text-sm text-slate-400">Your starred files</p>
+                      <CardTitle>Storage Usage</CardTitle>
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        {formatFileSize(usedStorage)} of {formatFileSize(totalStorage)} used
+                      </p>
                     </div>
                   </div>
-                  <Button 
-                    size="sm" 
-                    variant="flat" 
-                    endContent={<ArrowRight className="w-4 h-4" />}
-                    onPress={() => navigate('/files?filter=favorites')}
-                  >
-                    View All
+                  <Badge variant={progressColor} size="sm">
+                    {storagePercentage.toFixed(1)}%
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <Progress value={storagePercentage} colorVariant={progressColor} size="lg" className="mb-6" />
+                
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                  {storageData.map(item => (
+                    <div key={item.name} className="text-center">
+                      <div className="w-3 h-3 rounded-full mx-auto mb-2" style={{ backgroundColor: item.color }} />
+                      <p className="text-xs text-neutral-400">{item.name}</p>
+                      <p className="text-sm font-semibold text-neutral-100">{item.value}%</p>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Activity Chart */}
+            <Card variant="default">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-success-500/10 rounded-lg">
+                      <Activity className="h-5 w-5 text-success-400" />
+                    </div>
+                    <div>
+                      <CardTitle>Activity Overview</CardTitle>
+                      <p className="text-xs text-neutral-400 mt-0.5">Last 7 days</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="ghost-neutral" leftIcon={<TrendingUp className="h-4 w-4" />}>
+                    Details
                   </Button>
                 </div>
               </CardHeader>
               <CardBody>
-                <div className="space-y-3">
-                  {favoriteFiles.slice(0, 3).map((file) => {
-                    const getFileIcon = () => {
-                      switch (file.category) {
-                        case 'image': return Image;
-                        case 'video': return Video;
-                        case 'audio': return Music;
-                        case 'document': return FileText;
-                        default: return Archive;
-                      }
-                    };
-                    
-                    const FileIcon = getFileIcon();
-                    
-                    return (
-                      <div key={file.fileId} className="flex items-center space-x-3 p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-all duration-300 group cursor-pointer">
-                        <div className="p-2 bg-gradient-to-r from-slate-600 to-slate-500 rounded-lg group-hover:from-yellow-600/20 group-hover:to-orange-600/20 transition-all duration-300">
-                          <FileIcon className="w-4 h-4 text-slate-300 group-hover:text-yellow-400 transition-colors duration-300" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-white truncate text-sm">
-                            {file.fileName || `File ${file.fileId.slice(0, 8)}...`}
-                          </h4>
-                          <p className="text-xs text-slate-400">{file.fileSize}</p>
-                        </div>
-                        
-                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      </div>
-                    );
-                  })}
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={analyticsData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+                      <XAxis dataKey="date" stroke="#737373" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#737373" fontSize={12} tickLine={false} axisLine={false} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#171717', border: '1px solid #262626', borderRadius: '8px' }}
+                        itemStyle={{ fontSize: '14px' }}
+                      />
+                      <Line type="monotone" dataKey="uploads" stroke="#3B82F6" strokeWidth={2} dot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="downloads" stroke="#10B981" strokeWidth={2} dot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="views" stroke="#F43F5E" strokeWidth={2} dot={{ r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </CardBody>
             </Card>
-          )}
-        </div>
 
-        {/* Right Sidebar */}
-        <div className="space-y-8">
-          {/* Quick Upload */}
-          <Card className="border border-slate-700 bg-gradient-to-br from-blue-600/10 to-purple-600/10 backdrop-blur-xl border-blue-500/30">
-            <CardBody className="p-6 text-center">
-              <div className="inline-flex p-4 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-full mb-4">
-                <Upload className="w-8 h-8 text-blue-300" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Quick Upload</h3>
-              <p className="text-sm text-slate-400 mb-6">
-                Drag & drop files or click to browse
-              </p>
-              <Button
-                color="primary"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                startContent={<Plus className="w-4 h-4" />}
-                onPress={() => navigate('/upload')}
-              >
-                Upload Files
-              </Button>
-            </CardBody>
-          </Card>
+            {/* Recent Files */}
+            <Card variant="default">
+              <CardHeader className="pb-4 border-b border-neutral-800">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-accent-500/10 rounded-lg">
+                      <Clock className="h-5 w-5 text-accent-400" />
+                    </div>
+                    <div>
+                      <CardTitle>Recent Files</CardTitle>
+                      <p className="text-xs text-neutral-400 mt-0.5">Your latest uploads</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="ghost-neutral" rightIcon={<ArrowRight className="h-4 w-4" />} onClick={() => navigate('/files')}>
+                    View All
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardBody className="p-0">
+                {recentFiles.length > 0 ? (
+                  <div className="divide-y divide-neutral-800">
+                    {recentFiles.slice(0, 5).map(file => {
+                      const FileIcon = file.category === 'image' ? Image : file.category === 'video' ? Video : file.category === 'audio' ? Music : file.category === 'document' ? FileText : Archive
+                      
+                      return (
+                        <div key={file.fileId} className="flex items-center gap-4 p-4 hover:bg-neutral-800/50 transition-colors cursor-pointer" onClick={() => navigate('/files')}>
+                          <div className="p-2.5 bg-neutral-800 rounded-lg text-neutral-400">
+                            <FileIcon className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-neutral-100 truncate">
+                              {file.fileName || `File ${file.fileId.slice(0, 8)}`}
+                            </h4>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-neutral-500">
+                              <span>{formatFileSize(Number(file.fileSize))}</span>
+                              <span>•</span>
+                              <span>{new Date(file.uploadedAt).toLocaleDateString()}</span>
+                              {file.isPublic && <Badge variant="success" size="sm">Public</Badge>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+                              <Eye className="h-3.5 w-3.5" />
+                              <span>{file.accessCount}</span>
+                            </div>
+                            {file.isFavorite && <Star className="h-4 w-4 text-warning-400 fill-warning-400" />}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 px-4">
+                    <div className="inline-flex p-4 bg-neutral-800 rounded-full mb-4">
+                      <Files className="h-8 w-8 text-neutral-500" />
+                    </div>
+                    <h4 className="text-lg font-medium text-neutral-100 mb-1">No files yet</h4>
+                    <p className="text-sm text-neutral-400 mb-5">Upload your first file to get started</p>
+                    <Button variant="primary" leftIcon={<Upload className="h-4 w-4" />} onClick={() => navigate('/upload')}>
+                      Upload Now
+                    </Button>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          </div>
 
-          {/* Network Status */}
-          <Card className="border border-slate-700 bg-slate-800/30 backdrop-blur-xl">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-r from-green-600/20 to-emerald-600/20 rounded-lg">
-                  <Activity className="w-5 h-5 text-green-400" />
+          {/* RIGHT COLUMN */}
+          <div className="space-y-8">
+            
+            {/* Quick Upload Banner */}
+            <Card variant="outlined" className="bg-gradient-to-br from-primary-600/10 to-accent-600/10 border-primary-500/20 hover:border-primary-500/40 cursor-pointer transition-colors" onClick={() => navigate('/upload')}>
+              <CardBody className="p-6 text-center">
+                <div className="inline-flex p-4 bg-primary-500/20 rounded-full mb-4">
+                  <Upload className="h-8 w-8 text-primary-400" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Network Status</h3>
-                  <p className="text-sm text-slate-400">Solana & IPFS</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-4">
-              {/* Solana Status */}
-              <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-                  <span className="text-sm font-medium text-white">Solana</span>
-                </div>
-                <Chip size="sm" color="success" variant="flat">Online</Chip>
-              </div>
+                <h3 className="text-lg font-semibold text-neutral-50 mb-1">Quick Upload</h3>
+                <p className="text-sm text-neutral-400 mb-5">
+                  Drag & drop files or click to browse
+                </p>
+                <Button variant="primary" fullWidth leftIcon={<Plus className="h-4 w-4" />} onClick={(e) => { e.stopPropagation(); navigate('/upload'); }}>
+                  Select Files
+                </Button>
+              </CardBody>
+            </Card>
 
-              {/* IPFS Status */}
-              <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse" />
-                  <span className="text-sm font-medium text-white">IPFS</span>
+            {/* Quick Actions List */}
+            <Card variant="default">
+              <CardHeader className="pb-3 border-b border-neutral-800">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-warning-500/10 rounded-lg">
+                    <Zap className="h-5 w-5 text-warning-400" />
+                  </div>
+                  <div>
+                    <CardTitle>Quick Actions</CardTitle>
+                    <p className="text-xs text-neutral-400 mt-0.5">Common tasks</p>
+                  </div>
                 </div>
-                <Chip size="sm" color="primary" variant="flat">Connected</Chip>
-              </div>
-
-              {/* Performance metrics */}
-              <Divider className="bg-slate-600" />
-              
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Upload Speed</span>
-                  <span className="text-white font-medium">Fast</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Network Latency</span>
-                  <span className="text-green-400 font-medium">45ms</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">IPFS Peers</span>
-                  <span className="text-blue-400 font-medium">2,847</span>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Tips & Features */}
-          <Card className="border border-slate-700 bg-slate-800/30 backdrop-blur-xl">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-r from-teal-600/20 to-cyan-600/20 rounded-lg">
-                  <Shield className="w-5 h-5 text-teal-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Pro Tips</h3>
-                  <p className="text-sm text-slate-400">Maximize your Denft experience</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-4">
-              {[
-                {
-                  icon: Shield,
-                  title: 'Enable 2FA',
-                  description: 'Add extra security to your account',
-                  action: 'Set up',
-                },
-                {
-                  icon: Share2,
-                  title: 'Smart Sharing',
-                  description: 'Use expiring links for sensitive files',
-                  action: 'Learn more',
-                },
-                {
-                  icon: Users,
-                  title: 'Team Collaboration',
-                  description: 'Invite team members to shared folders',
-                  action: 'Invite',
-                },
-              ].map((tip, index) => {
-                const Icon = tip.icon;
-                
-                return (
-                  <div key={index} className="p-3 bg-slate-700/30 rounded-lg hover:bg-slate-700/50 transition-all duration-300 group">
-                    <div className="flex items-start space-x-3">
-                      <div className="p-2 bg-gradient-to-r from-slate-600 to-slate-500 rounded-lg group-hover:from-teal-600/20 group-hover:to-cyan-600/20 transition-all duration-300">
-                        <Icon className="w-4 h-4 text-slate-300 group-hover:text-teal-400 transition-colors duration-300" />
+              </CardHeader>
+              <CardBody className="p-0">
+                <div className="divide-y divide-neutral-800">
+                  {QUICK_ACTIONS.map(action => (
+                    <div key={action.title} className="flex items-center gap-4 p-4 hover:bg-neutral-800/50 transition-colors cursor-pointer group" onClick={() => navigate(action.path)}>
+                      <div className={`p-2.5 rounded-lg bg-gradient-to-r ${action.color} bg-opacity-20`}>
+                        <action.icon className="h-4 w-4 text-neutral-50" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-white text-sm">{tip.title}</h4>
-                        <p className="text-xs text-slate-400 mb-2">{tip.description}</p>
-                        <Button size="sm" variant="flat" className="text-xs h-6">
-                          {tip.action}
-                        </Button>
+                        <h4 className="text-sm font-medium text-neutral-100">{action.title}</h4>
+                        <p className="text-xs text-neutral-500 mt-0.5">{action.description}</p>
                       </div>
+                      <ArrowRight className="h-4 w-4 text-neutral-600 group-hover:text-neutral-300 transition-colors" />
                     </div>
-                  </div>
-                );
-              })}
-            </CardBody>
-          </Card>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
 
-          {/* Recent Activity */}
-          <Card className="border border-slate-700 bg-slate-800/30 backdrop-blur-xl">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-r from-pink-600/20 to-red-600/20 rounded-lg">
-                  <Clock className="w-5 h-5 text-pink-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
-                  <p className="text-sm text-slate-400">Latest actions</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-3">
-              {/* Mock activity items */}
-              {[
-                { action: 'Uploaded', file: 'document.pdf', time: '2 hours ago', icon: Upload, color: 'text-blue-400' },
-                { action: 'Shared', file: 'image.jpg', time: '1 day ago', icon: Share2, color: 'text-purple-400' },
-                { action: 'Downloaded', file: 'video.mp4', time: '2 days ago', icon: Download, color: 'text-green-400' },
-              ].map((activity, index) => {
-                const Icon = activity.icon;
-                
-                return (
-                  <div key={index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-700/30 transition-colors duration-300">
-                    <Icon className={`w-4 h-4 ${activity.color}`} />
-                    <div className="flex-1">
-                      <p className="text-sm text-white">
-                        <span className="font-medium">{activity.action}</span> {activity.file}
-                      </p>
-                      <p className="text-xs text-slate-500">{activity.time}</p>
-                    </div>
+            {/* Storage Breakdown Chart */}
+            <Card variant="default">
+              <CardHeader className="pb-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-accent-500/10 rounded-lg">
+                    <HardDrive className="h-5 w-5 text-accent-400" />
                   </div>
-                );
-              })}
-            </CardBody>
-          </Card>
+                  <div>
+                    <CardTitle>Storage by Type</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={storageData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {storageData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#171717', border: '1px solid #262626', borderRadius: '8px' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Network Status */}
+            <Card variant="default">
+              <CardHeader className="pb-3 border-b border-neutral-800">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-success-500/10 rounded-lg">
+                    <Activity className="h-5 w-5 text-success-400" />
+                  </div>
+                  <div>
+                    <CardTitle>Network Status</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardBody className="p-4 space-y-4">
+                <div className="flex items-center justify-between p-3 bg-neutral-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 bg-success-500 rounded-full animate-pulse" />
+                    <span className="text-sm font-medium text-neutral-100">Solana Devnet</span>
+                  </div>
+                  <Badge variant="success" size="sm">Online</Badge>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-neutral-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 bg-primary-500 rounded-full animate-pulse" />
+                    <span className="text-sm font-medium text-neutral-100">IPFS Gateway</span>
+                  </div>
+                  <Badge variant="primary" size="sm">Connected</Badge>
+                </div>
+              </CardBody>
+            </Card>
+
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    </PageTransition>
+  )
+}
