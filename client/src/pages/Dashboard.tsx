@@ -35,26 +35,7 @@ import { formatFileSize } from '@/lib/utils'
 
 //  Mock Data 
 
-const generateMockAnalytics = () => {
-  return Array.from({ length: 7 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() - (6 - i))
-    return {
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      uploads: Math.floor(Math.random() * 10) + 1,
-      downloads: Math.floor(Math.random() * 20) + 5,
-      views: Math.floor(Math.random() * 50) + 10,
-    }
-  })
-}
-
-const storageBreakdown = [
-  { name: 'Documents', value: 35, color: '#3B82F6' },
-  { name: 'Images',    value: 28, color: '#8B5CF6' },
-  { name: 'Videos',    value: 20, color: '#EC4899' },
-  { name: 'Audio',     value: 12, color: '#10B981' },
-  { name: 'Other',     value: 5,  color: '#F59E0B' },
-]
+// Removed mock data generators
 
 const QUICK_ACTIONS = [
   {
@@ -84,7 +65,7 @@ const QUICK_ACTIONS = [
 
 export function Dashboard() {
   const navigate = useNavigate()
-  const { walletAddress, balance, walletName } = useWallet()
+  const { walletAddress, balance, walletName, isAuthReady, token } = useWallet()
   const {
     files,
     recentFiles,
@@ -94,9 +75,11 @@ export function Dashboard() {
     usedStorage,
     fetchFiles,
     getStorageAnalytics,
+    getDashboardAnalytics,
   } = useFiles()
 
-  const [analyticsData] = useState(generateMockAnalytics())
+  const [analyticsData, setAnalyticsData] = useState<any[]>([])
+  const [storageData, setStorageData] = useState<any[]>([])
   const [isInitialising, setIsInitialising] = useState(true)
   const [quickStats, setQuickStats] = useState({
     totalFiles: 0,
@@ -112,30 +95,44 @@ export function Dashboard() {
     let mounted = true
     const loadDashboardData = async () => {
       try {
-        await fetchFiles(true)
-        await getStorageAnalytics()
-        // Wait an extra tick to ensure Context is fully populated
-        await new Promise(r => setTimeout(r, 300))
+        await fetchFiles(0, 5) // Fetch first page for recent files
+        
+        const [storageRes, dashboardRes] = await Promise.all([
+          getStorageAnalytics(),
+          getDashboardAnalytics()
+        ])
+        
+        if (mounted) {
+          if (storageRes?.data?.storageBreakdown) {
+            const colors = ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B']
+            const coloredBreakdown = storageRes.data.storageBreakdown.map((item: any, i: number) => ({
+              ...item,
+              // Convert absolute bytes to percentage value for PieChart
+              value: totalStorage > 0 ? Number(((item.value / totalStorage) * 100).toFixed(1)) : 0,
+              color: colors[i % colors.length]
+            })).filter((item: any) => item.value > 0)
+            setStorageData(coloredBreakdown)
+          }
+
+          if (dashboardRes?.data) {
+            setAnalyticsData(dashboardRes.data.history)
+            setQuickStats({
+              totalFiles: dashboardRes.data.totalFiles,
+              totalDownloads: dashboardRes.data.totalDownloads,
+              totalViews: dashboardRes.data.totalViews,
+              filesShared: dashboardRes.data.filesShared,
+            })
+          }
+        }
       } catch (error) {
         console.error('Failed to load dashboard data:', error)
       } finally {
         if (mounted) setIsInitialising(false)
       }
     }
-    if (walletAddress) loadDashboardData()
+    if (walletAddress && isAuthReady && token) loadDashboardData()
     return () => { mounted = false }
-  }, [walletAddress, fetchFiles, getStorageAnalytics])
-
-  useEffect(() => {
-    if (!files) return
-    const stats = files.reduce((acc, file) => ({
-      totalFiles: acc.totalFiles + 1,
-      totalDownloads: acc.totalDownloads + parseInt(file.downloadCount || '0', 10),
-      totalViews: acc.totalViews + parseInt(file.accessCount || '0', 10),
-      filesShared: acc.filesShared + (file.sharingSettings?.isShared ? 1 : 0),
-    }), { totalFiles: 0, totalDownloads: 0, totalViews: 0, filesShared: 0 })
-    setQuickStats(stats)
-  }, [files])
+  }, [walletAddress, isAuthReady, token, fetchFiles, getStorageAnalytics, getDashboardAnalytics])
 
   if (isLoading || isInitialising) {
     return <DashboardSkeleton />
@@ -254,7 +251,7 @@ export function Dashboard() {
                 <Progress value={storagePercentage} colorVariant={progressColor} size="lg" className="mb-6" />
                 
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                  {storageBreakdown.map(item => (
+                  {storageData.map(item => (
                     <div key={item.name} className="text-center">
                       <div className="w-3 h-3 rounded-full mx-auto mb-2" style={{ backgroundColor: item.color }} />
                       <p className="text-xs text-neutral-400">{item.name}</p>
@@ -437,7 +434,7 @@ export function Dashboard() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={storageBreakdown}
+                        data={storageData}
                         cx="50%"
                         cy="50%"
                         innerRadius={60}
@@ -446,7 +443,7 @@ export function Dashboard() {
                         dataKey="value"
                         stroke="none"
                       >
-                        {storageBreakdown.map((entry, index) => (
+                        {storageData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>

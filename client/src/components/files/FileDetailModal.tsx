@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/cn'
 import { formatFileSize } from '@/lib/utils'
+import { useWallet } from '@/contexts/WalletContext'
+import { Link } from 'react-router-dom'
 
 export interface FileData {
   fileId: string
@@ -53,6 +55,12 @@ export function FileDetailModal({ isOpen, onClose, file, onDownload, onShare, re
   const [verifyProgress, setVerifyProgress] = useState(0)
   const [verifyStatus, setVerifyStatus] = useState<'idle' | 'success' | 'mismatch'>('idle')
   const [copied, setCopied] = useState(false)
+  
+  const { hasPasscode, showToast, token } = useWallet()
+  const [isUnlocked, setIsUnlocked] = useState(false)
+  const [passcode, setPasscode] = useState('')
+  const [isVerifyingPasscode, setIsVerifyingPasscode] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   // Reset state when file changes
   useEffect(() => {
@@ -61,12 +69,69 @@ export function FileDetailModal({ isOpen, onClose, file, onDownload, onShare, re
       setVerifyProgress(0)
       setVerifyStatus('idle')
       setCopied(false)
+      setIsUnlocked(false)
+      setPasscode('')
+      setPreviewUrl(null)
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
     }
-    return () => { document.body.style.overflow = '' }
+    return () => { 
+      document.body.style.overflow = '' 
+    }
   }, [isOpen, file])
+
+  const fetchActualStream = async () => {
+    if (!file) return
+    try {
+      const res = await fetch(`/api/files/${file.fileId}/stream`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      if (res.ok) {
+        const blob = await res.blob()
+        setPreviewUrl(URL.createObjectURL(blob))
+      }
+    } catch (e) {
+      console.warn('Failed to fetch stream preview', e)
+    }
+  }
+
+  const handleVerifyPasscode = async () => {
+    if (passcode.length < 3) return
+    if (!token) {
+      showToast('Authentication required. Please reconnect your wallet.', 'error')
+      return
+    }
+    setIsVerifyingPasscode(true)
+    try {
+      const res = await fetch('/api/user/verify-passcode', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ passcode })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setIsUnlocked(true)
+        showToast('Access granted', 'success')
+        fetchActualStream()
+      } else {
+        const errMsg = typeof data.error === 'object' ? data.error?.message : data.error
+        showToast(errMsg || 'Invalid passcode', 'error')
+      }
+    } catch (e) {
+      showToast('Verification failed', 'error')
+    } finally {
+      setIsVerifyingPasscode(false)
+    }
+  }
 
   if (!isOpen || !file) return null
 
@@ -153,14 +218,62 @@ export function FileDetailModal({ isOpen, onClose, file, onDownload, onShare, re
             {/* Left: Preview & Metadata */}
             <div className="lg:col-span-2 space-y-6">
               
-              {/* Preview Panel (Simulated) */}
+              {/* Preview Panel */}
               <Card variant="ghost" className="aspect-video w-full bg-neutral-900 flex items-center justify-center overflow-hidden border-neutral-800 relative">
-                {file.category === 'image' ? (
-                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80')] bg-cover bg-center opacity-80" />
+                {!hasPasscode ? (
+                  <div className="text-center p-6 relative z-10 flex flex-col items-center max-w-sm">
+                    <Shield className="h-16 w-16 text-neutral-600 mb-4" />
+                    <h3 className="text-lg font-semibold text-neutral-200 mb-2">Secure Viewing</h3>
+                    <p className="text-sm text-neutral-400 mb-6">You need to set a viewing passcode in your Settings before you can preview file contents.</p>
+                    <Link to="/settings" onClick={onClose} className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors">
+                      Go to Settings
+                    </Link>
+                  </div>
+                ) : !isUnlocked ? (
+                  <div className="text-center relative z-10 flex flex-col items-center w-full max-w-[320px] bg-neutral-950/80 p-8 rounded-2xl border border-neutral-800 shadow-2xl backdrop-blur-sm">
+                    <Lock className="h-10 w-10 text-primary-400 mb-4" />
+                    <h3 className="text-lg font-semibold text-neutral-100 mb-2">Locked File</h3>
+                    <p className="text-sm text-neutral-400 mb-6">Enter your viewing passcode to unlock.</p>
+                    
+                    <div className="flex flex-col gap-3 w-full">
+                      <input 
+                        type="password" 
+                        placeholder="Passcode" 
+                        maxLength={6}
+                        value={passcode}
+                        onChange={(e) => setPasscode(e.target.value.replace(/\D/g, ''))}
+                        onKeyDown={(e) => e.key === 'Enter' && handleVerifyPasscode()}
+                        className="w-full text-center tracking-[0.5em] px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-lg font-mono text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-primary-500 transition-colors"
+                      />
+                      <Button 
+                        variant="primary" 
+                        className="w-full"
+                        onClick={handleVerifyPasscode}
+                        disabled={isVerifyingPasscode || passcode.length < 3}
+                      >
+                        {isVerifyingPasscode ? 'Verifying...' : 'Unlock'}
+                      </Button>
+                    </div>
+                  </div>
+                ) : previewUrl ? (
+                  <div className="w-full h-full bg-black/50 flex items-center justify-center p-2">
+                    {file.category === 'image' ? (
+                      <img src={previewUrl} alt={file.fileName} className="w-full h-full object-contain" />
+                    ) : file.category === 'video' ? (
+                      <video src={previewUrl} controls className="w-full h-full object-contain" />
+                    ) : file.category === 'audio' ? (
+                      <audio src={previewUrl} controls className="w-full" />
+                    ) : (
+                      <div className="text-center p-6 relative z-10">
+                        <Icon className="h-16 w-16 text-primary-500 mx-auto mb-4" />
+                        <p className="text-neutral-400 font-medium">Document unlocked. Download to view full contents.</p>
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <div className="text-center p-6 relative z-10">
-                    <Icon className="h-16 w-16 text-neutral-600 mx-auto mb-4" />
-                    <p className="text-neutral-400 font-medium">No preview available for {file.category} files</p>
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <Loader2 className="h-8 w-8 text-primary-400 animate-spin" />
+                    <p className="text-sm text-neutral-400 font-medium">Decrypting and loading...</p>
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />

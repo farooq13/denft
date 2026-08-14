@@ -129,24 +129,87 @@ export class FileService {
   /**
    * Retrieves a paginated list of active files for a user.
    */
-  static async getUserFiles(walletAddress: string, skip = 0, take = 50) {
+  static async getUserFiles(
+    walletAddress: string, 
+    skip = 0, 
+    take = 50,
+    search?: string,
+    category?: string,
+    sortBy: 'date' | 'name' | 'size' | 'downloads' = 'date'
+  ) {
+    const where: any = { ownerWallet: walletAddress, isActive: true };
+    if (category) where.category = category;
+    if (search) {
+      where.fileName = { contains: search, mode: 'insensitive' };
+    }
+
+    let orderBy: any = { uploadedAt: 'desc' };
+    if (sortBy === 'name') orderBy = { fileName: 'asc' };
+    else if (sortBy === 'size') orderBy = { fileSize: 'desc' };
+    else if (sortBy === 'downloads') orderBy = { downloadCount: 'desc' };
+
     const [files, total] = await Promise.all([
       prisma.file.findMany({
-        where: { ownerWallet: walletAddress, isActive: true },
-        orderBy: { uploadedAt: 'desc' },
+        where,
+        orderBy,
         skip,
         take,
       }),
-      prisma.file.count({
-        where: { ownerWallet: walletAddress, isActive: true },
-      }),
+      prisma.file.count({ where }),
     ]);
 
-    // Convert BigInt to string for JSON serialization
     return {
       files: files.map((f) => ({ ...f, fileSize: f.fileSize.toString() })),
       total,
     };
+  }
+
+  /**
+   * Retrieves a paginated list of public files.
+   */
+  static async getPublicFiles(
+    skip = 0, 
+    take = 50,
+    search?: string,
+    sortBy: 'date' | 'name' | 'size' | 'downloads' = 'date'
+  ) {
+    const where: any = { isPublic: true, isActive: true };
+    if (search) {
+      where.OR = [
+        { fileName: { contains: search, mode: 'insensitive' } },
+        { category: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    let orderBy: any = { uploadedAt: 'desc' };
+    if (sortBy === 'name') orderBy = { fileName: 'asc' };
+    else if (sortBy === 'size') orderBy = { fileSize: 'desc' };
+    else if (sortBy === 'downloads') orderBy = { downloadCount: 'desc' };
+
+    const [files, total] = await Promise.all([
+      prisma.file.findMany({
+        where,
+        orderBy,
+        skip,
+        take,
+      }),
+      prisma.file.count({ where }),
+    ]);
+
+    return {
+      files: files.map((f) => ({ ...f, fileSize: f.fileSize.toString() })),
+      total,
+    };
+  }
+
+  /**
+   * Safely increments the download count for a file.
+   */
+  static async trackDownload(fileId: string) {
+    await prisma.file.update({
+      where: { id: fileId },
+      data: { downloadCount: { increment: 1 } },
+    });
   }
 
   /**
@@ -187,5 +250,70 @@ export class FileService {
       stream.on('end', () => resolve(hash.digest('hex')));
       stream.on('error', reject);
     });
+  }
+
+  /**
+   * Performs bulk operations (delete, visibility, favorite) on multiple files.
+   */
+  static async bulkAction(walletAddress: string, action: string, fileIds: string[], value?: boolean) {
+    if (!fileIds || fileIds.length === 0) return { count: 0 };
+    
+    // Ensure we only operate on the user's active files
+    const where = {
+      id: { in: fileIds },
+      ownerWallet: walletAddress,
+      isActive: true,
+    };
+
+    switch (action) {
+      case 'delete':
+        return await prisma.$transaction(async (tx) => {
+          const filesToDelete = await tx.file.findMany({
+            where,
+            select: { fileSize: true, ipfsHash: true },
+          });
+
+          if (filesToDelete.length === 0) return { count: 0 };
+
+          const totalSize = filesToDelete.reduce((acc, f) => acc + f.fileSize, BigInt(0));
+
+          const { count } = await tx.file.updateMany({
+            where,
+            data: { isActive: false, deletedAt: new Date() },
+          });
+
+          await tx.user.update({
+            where: { walletAddress },
+            data: {
+              fileCount: { decrement: count },
+              storageUsed: { decrement: totalSize },
+            },
+          });
+
+          // Unpin from Pinata asynchronously
+          filesToDelete.forEach(f => {
+            pinata.files.public.delete([f.ipfsHash]).catch(() => {});
+          });
+
+          return { count };
+        });
+
+      case 'visibility':
+        if (value === undefined) throw new Error('Value required for visibility action');
+        return await prisma.file.updateMany({
+          where,
+          data: { isPublic: value },
+        });
+
+      case 'favorite':
+        if (value === undefined) throw new Error('Value required for favorite action');
+        return await prisma.file.updateMany({
+          where,
+          data: { isFavorite: value },
+        });
+
+      default:
+        throw new Error('Invalid bulk action');
+    }
   }
 }

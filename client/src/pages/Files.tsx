@@ -17,6 +17,7 @@ import {
   Files as FilesIcon,
 } from 'lucide-react'
 import { useFiles } from '@/contexts/FileContext'
+import { useWallet } from '@/contexts/WalletContext'
 import { PageTransition } from '@/components/ui/page-transition'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody } from '@/components/ui/card'
@@ -51,6 +52,7 @@ export function Files() {
   const [searchParams, setSearchParams] = useSearchParams()
   const {
     files,
+    totalVaultFiles,
     isLoading,
     error,
     downloadFile,
@@ -59,6 +61,7 @@ export function Files() {
     bulkOperation,
     fetchFiles,
   } = useFiles()
+  const { isAuthReady } = useWallet()
 
   // State
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -83,19 +86,41 @@ export function Files() {
   
   const isBulkDeleting = useRef(false)
 
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery)
+  
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   // Initialization & Data Loading
   useEffect(() => {
+    if (!isAuthReady) return;
     let mounted = true
     const loadData = async () => {
+      setIsInitialising(true)
       try {
-        await fetchFiles(true)
+        const skip = (currentPage - 1) * itemsPerPage
+        const cat = selectedCategory === 'all' ? undefined : selectedCategory
+        let backendSort = 'date'
+        if (sortBy === 'fileName') backendSort = 'name'
+        if (sortBy === 'fileSize') backendSort = 'size'
+        if (sortBy === 'downloadCount' || sortBy === 'accessCount') backendSort = 'downloads'
+
+        await fetchFiles(skip, itemsPerPage, debouncedSearch, cat, backendSort)
       } finally {
         if (mounted) setIsInitialising(false)
       }
     }
     loadData()
     return () => { mounted = false }
-  }, [fetchFiles])
+  }, [isAuthReady, fetchFiles, currentPage, itemsPerPage, debouncedSearch, selectedCategory, sortBy])
+
+  // Reset pagination on filter change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedSearch, selectedCategory, sortBy, sortDirection])
 
   // Persist view mode
   useEffect(() => {
@@ -112,57 +137,8 @@ export function Files() {
     setSearchParams(params, { replace: true })
   }, [searchQuery, selectedCategory, sortBy, sortDirection, setSearchParams])
 
-  // Filtering & Sorting
-  const filteredAndSortedFiles = useMemo(() => {
-    let result = [...files]
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      result = result.filter(f =>
-        (f.fileName || '').toLowerCase().includes(q) ||
-        (f.description || '').toLowerCase().includes(q) ||
-        (f.tags || []).some((t: string) => t.toLowerCase().includes(q))
-      )
-    }
-
-    if (selectedCategory !== 'all') {
-      result = result.filter(f => f.category === selectedCategory)
-    }
-
-    result.sort((a, b) => {
-      let aVal: any = a[sortBy as keyof typeof a]
-      let bVal: any = b[sortBy as keyof typeof b]
-
-      if (sortBy === 'uploadedAt') {
-        aVal = new Date(aVal).getTime()
-        bVal = new Date(bVal).getTime()
-      } else if (sortBy === 'fileSize' || sortBy === 'accessCount' || sortBy === 'downloadCount') {
-        aVal = parseInt(aVal, 10) || 0
-        bVal = parseInt(bVal, 10) || 0
-      }
-
-      let comp = 0
-      if (aVal < bVal) comp = -1
-      if (aVal > bVal) comp = 1
-      return sortDirection === 'desc' ? -comp : comp
-    })
-
-    return result
-  }, [files, searchQuery, selectedCategory, sortBy, sortDirection])
-
-  const totalPages = Math.ceil(filteredAndSortedFiles.length / itemsPerPage)
-  
-  // Ensure current page is valid after filtering
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(totalPages)
-    }
-  }, [totalPages, currentPage])
-
-  const paginatedFiles = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage
-    return filteredAndSortedFiles.slice(start, start + itemsPerPage)
-  }, [filteredAndSortedFiles, currentPage, itemsPerPage])
+  const totalPages = Math.max(1, Math.ceil(totalVaultFiles / itemsPerPage))
+  const paginatedFiles = files
 
   // Actions
   const toggleFileSelection = (id: string) => {
@@ -284,7 +260,7 @@ export function Files() {
               My Vault
             </h1>
             <p className="text-sm text-neutral-400">
-              {filteredAndSortedFiles.length} of {files.length} files
+              {files.length} of {totalVaultFiles} files
               {selectedFiles.size > 0 && <span className="ml-2 text-primary-400 font-medium">• {selectedFiles.size} selected</span>}
             </p>
           </div>
@@ -371,7 +347,7 @@ export function Files() {
         )}
 
         {/* ── FILES CONTENT ─────────────────────────────────────── */}
-        {filteredAndSortedFiles.length === 0 ? (
+        {files.length === 0 ? (
           <div className="pt-10">
             <EmptyState 
               icon={<FilesIcon className="h-12 w-12" />}

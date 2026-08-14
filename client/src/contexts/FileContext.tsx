@@ -114,6 +114,8 @@ interface FileContextType {
   files: FileInfo[];
   sharedFiles: FileInfo[];
   publicFiles: FileInfo[];
+  totalVaultFiles: number;
+  totalPublicFiles: number;
   favoriteFiles: FileInfo[];
   recentFiles: FileInfo[];
   isLoading: boolean;
@@ -132,9 +134,9 @@ interface FileContextType {
     category?: string;
   }) => Promise<UploadResult>;
   uploadMultipleFiles: (files: File[], metadata?: any) => Promise<UploadResult[]>;
-  fetchFiles: (forceRefresh?: boolean) => Promise<void>;
+  fetchFiles: (skip?: number, take?: number, search?: string, category?: string, sortBy?: string) => Promise<void>;
   fetchSharedFiles: () => Promise<void>;
-  fetchPublicFiles: () => Promise<void>;
+  fetchPublicFiles: (skip?: number, take?: number, search?: string, sortBy?: string) => Promise<void>;
   verifyFile: (file: File, ownerAddress?: string) => Promise<VerificationResult>;
   shareFile: (fileId: string, accessorWallet: string, permissions: SharingPermissions, options?: {
     expiresAt?: string;
@@ -157,6 +159,7 @@ interface FileContextType {
   // Storage analytics
   getStorageAnalytics: () => Promise<any>;
   getFileAnalytics: (fileId: string) => Promise<any>;
+  getDashboardAnalytics: () => Promise<any>;
 }
 
 const FileContext = createContext<FileContextType | undefined>(undefined);
@@ -180,6 +183,8 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
   const [files, setFiles] = useState<FileInfo[]>([]);
   const [sharedFiles, setSharedFiles] = useState<FileInfo[]>([]);
   const [publicFiles, setPublicFiles] = useState<FileInfo[]>([]);
+  const [totalVaultFiles, setTotalVaultFiles] = useState(0);
+  const [totalPublicFiles, setTotalPublicFiles] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -199,6 +204,14 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
   const makeAuthenticatedRequest = useCallback(async (url: string, options: RequestInit = {}) => {
     let currentToken = token;
     
+    // Fallback: read from localStorage if React state is stale
+    if (!currentToken) {
+      try {
+        const stored = localStorage.getItem('denft-auth');
+        if (stored) currentToken = JSON.parse(stored).token;
+      } catch {}
+    }
+
     if (!currentToken && refreshTokenFromBackend) {
       currentToken = await refreshTokenFromBackend();
     }
@@ -244,7 +257,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     }
 
     return response;
-  }, [token, walletAddress]);
+  }, [token, walletAddress, refreshTokenFromBackend]);
 
   // Enhanced file upload with progress tracking
   const uploadFile = useCallback(async (
@@ -270,6 +283,14 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
 
       let currentToken = token;
       
+      // Fallback: read from localStorage if React state is stale
+      if (!currentToken) {
+        try {
+          const stored = localStorage.getItem('denft-auth');
+          if (stored) currentToken = JSON.parse(stored).token;
+        } catch {}
+      }
+
       if (!currentToken && refreshTokenFromBackend) {
         currentToken = await refreshTokenFromBackend();
       }
@@ -392,7 +413,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
       }
       
       // Refresh files list
-      await fetchFiles(true);
+      await fetchFiles();
       
       return result;
 
@@ -405,7 +426,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
       setIsLoading(false);
       setUploadProgress(0);
     }
-  }, [token, walletAddress, showToast]);
+  }, [token, walletAddress, showToast, refreshTokenFromBackend]);
 
   // Upload multiple files with batch processing
   const uploadMultipleFiles = useCallback(async (
@@ -455,21 +476,26 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     }
   }, [uploadFile, showToast]);
 
-  // Enhanced fetch files with caching and filtering
-  const fetchFiles = useCallback(async (forceRefresh: boolean = false): Promise<void> => {
-    // Check cache first if not forcing refresh
-    if (!forceRefresh && files.length > 0) {
-      const lastFetch = localStorage.getItem('denft-last-fetch');
-      if (lastFetch && Date.now() - parseInt(lastFetch) < 30000) { // 30 second cache
-        return;
-      }
-    }
-
+  // Enhanced fetch files with server-side pagination and filtering
+  const fetchFiles = useCallback(async (
+    skip = 0, 
+    take = 50, 
+    search?: string, 
+    category?: string, 
+    sortBy?: string
+  ): Promise<void> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await makeAuthenticatedRequest('/api/files/my-files');
+      const params = new URLSearchParams();
+      params.append('skip', skip.toString());
+      params.append('take', take.toString());
+      if (search) params.append('search', search);
+      if (category) params.append('category', category);
+      if (sortBy) params.append('sortBy', sortBy);
+
+      const response = await makeAuthenticatedRequest(`/api/files/my-files?${params.toString()}`);
       const data = await response.json();
       
       const filesData = (data.files || []).map((file: any) => ({
@@ -486,11 +512,9 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
       }));
       
       setFiles(filesData);
+      setTotalVaultFiles(data.total || 0);
       setUsedStorage(data.usedStorage || 0);
       setTotalStorage(data.totalStorage || 1073741824); // 1GB default
-      
-      // Cache timestamp
-      localStorage.setItem('denft-last-fetch', Date.now().toString());
 
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to fetch files';
@@ -521,13 +545,25 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     }
   }, [makeAuthenticatedRequest]);
 
-  // Fetch public files
-  const fetchPublicFiles = useCallback(async (): Promise<void> => {
+  // Fetch public files with server-side pagination
+  const fetchPublicFiles = useCallback(async (
+    skip = 0, 
+    take = 50, 
+    search?: string, 
+    sortBy?: string
+  ): Promise<void> => {
     try {
-      const response = await fetch('/api/files/public');
+      const params = new URLSearchParams();
+      params.append('skip', skip.toString());
+      params.append('take', take.toString());
+      if (search) params.append('search', search);
+      if (sortBy) params.append('sortBy', sortBy);
+
+      const response = await fetch(`/api/files/public?${params.toString()}`);
       const data = await response.json();
       
       setPublicFiles(data.files || []);
+      setTotalPublicFiles(data.total || 0);
 
     } catch (error: any) {
       console.error('Failed to fetch public files:', error);
@@ -615,7 +651,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
       showToast('File shared successfully!', 'success');
       
       // Refresh files to update sharing status
-      await fetchFiles(true);
+      await fetchFiles();
 
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to share file';
@@ -627,60 +663,23 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     }
   }, [makeAuthenticatedRequest, showToast, fetchFiles]);
 
-  // Enhanced download with progress tracking
+  // Enhanced download with tracking
   const downloadFile = useCallback(async (fileId: string): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-
     try {
-      const response = await fetch(`/api/files/${fileId}/download`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Wallet-Address': walletAddress!,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Download failed');
-      }
-
-      // Get file metadata from headers
-      const contentDisposition = response.headers.get('Content-Disposition');
-      response.headers.get('Content-Type');
-      const filename = contentDisposition
-        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
-        : `file-${fileId}`;
-
-      // Create blob and trigger download
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
+      // Track download silently
+      await makeAuthenticatedRequest(`/api/files/${fileId}/download`, { method: 'POST' }).catch(() => {});
       
-      // Cleanup
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      showToast(`${filename} downloaded successfully!`, 'success');
+      // Open stream - browser will automatically download it because backend sets Content-Disposition: attachment
+      window.open(`/api/files/${fileId}/stream`, '_blank');
+      showToast('Download started', 'success');
       
-      // Refresh files to update download count
-      await fetchFiles(true);
-
+      // Refresh files list to update download count
+      await fetchFiles();
     } catch (error: any) {
-      const errorMessage = error.message || 'Failed to download file';
-      setError(errorMessage);
-      showToast(errorMessage, 'error');
-      throw error;
-    } finally {
-      setIsLoading(false);
+      console.error('Download failed:', error);
+      showToast('Failed to start download', 'error');
     }
-  }, [token, walletAddress, showToast, fetchFiles]);
+  }, [makeAuthenticatedRequest, showToast, fetchFiles]);
 
   // Enhanced delete with confirmation
   const deleteFile = useCallback(async (fileId: string): Promise<void> => {
@@ -698,7 +697,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
       setFiles(prev => prev.filter(f => f.fileId !== fileId));
       
       // Refresh files list
-      await fetchFiles(true);
+      await fetchFiles();
 
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to delete file';
@@ -770,13 +769,27 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     setIsLoading(true);
     
     try {
+      let action = operation;
+      let value: boolean | undefined = undefined;
+
+      if (operation === 'favorite') {
+        action = 'favorite';
+        value = true;
+      } else if (operation === 'unfavorite') {
+        action = 'favorite';
+        value = false;
+      } else if (operation === 'share') {
+        action = 'visibility';
+        value = true;
+      }
+
       await makeAuthenticatedRequest('/api/files/bulk', {
         method: 'POST',
-        body: JSON.stringify({ fileIds, operation }),
+        body: JSON.stringify({ fileIds, action, value }),
       });
 
       showToast(`Bulk ${operation} completed successfully!`, 'success');
-      await fetchFiles(true);
+      await fetchFiles();
 
     } catch (error: any) {
       const errorMessage = error.message || `Bulk ${operation} failed`;
@@ -830,6 +843,17 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
       return await response.json();
     } catch (error) {
       console.error('Failed to fetch file analytics:', error);
+      return null;
+    }
+  }, [makeAuthenticatedRequest]);
+
+  // Get dashboard analytics
+  const getDashboardAnalytics = useCallback(async () => {
+    try {
+      const response = await makeAuthenticatedRequest('/api/analytics/dashboard');
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to fetch dashboard analytics:', error);
       return null;
     }
   }, [makeAuthenticatedRequest]);
@@ -935,6 +959,7 @@ export const FileProvider: React.FC<FileProviderProps> = ({ children }) => {
     resetFilters,
     getStorageAnalytics,
     getFileAnalytics,
+    getDashboardAnalytics,
   };
 
   return (

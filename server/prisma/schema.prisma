@@ -17,14 +17,18 @@ model User {
   avatarUrl     String?  @map("avatar_url")
   fileCount     Int      @default(0) @map("file_count")
   storageUsed   BigInt   @default(0) @map("storage_used")
-  storageLimit  BigInt   @default(1073741824) @map("storage_limit") // 1 GB
-  fileLimit     Int      @default(100) @map("file_limit")
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  storageLimit   BigInt   @default(1073741824) @map("storage_limit") // 1 GB
+  fileLimit      Int      @default(100) @map("file_limit")
+  isActive       Boolean  @default(true) @map("is_active")
+  theme          String   @default("system")
+  viewMode       String   @default("grid") @map("view_mode")
+  viewingPasscode String? @map("viewing_passcode")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  files    File[]
-  sessions Session[]
+  files      File[]
+  sessions   Session[]
+  auditLogs  AuditLog[]
 
   @@index([walletAddress])
   @@map("users")
@@ -46,6 +50,7 @@ model File {
   category          String    @default("other")
   tags              String[]  @default([])
   isPublic          Boolean   @default(false) @map("is_public")
+  isFavorite        Boolean   @default(false) @map("is_favorite")
   accessCount       Int       @default(0) @map("access_count")
   downloadCount     Int       @default(0) @map("download_count")
   isActive          Boolean   @default(true) @map("is_active")
@@ -80,4 +85,20 @@ model Session {
   @@index([refreshToken])
   @@index([expiresAt])
   @@map("sessions")
+}
+
+// AuditLog — tracks destructive actions like Danger Zone wipe
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  action    String
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  signature String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("audit_logs")
 }

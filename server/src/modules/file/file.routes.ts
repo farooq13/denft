@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import * as os from 'node:os';
-import { uploadFile, getMyFiles, deleteFile, streamFile } from './file.controller.js';
+import { uploadFile, getMyFiles, deleteFile, streamFile, getPublicFiles, trackDownload, bulkOperation } from './file.controller.js';
 import { authenticate } from '../../middleware/auth.js';
 
 const router = Router();
@@ -14,14 +14,16 @@ const upload = multer({
 
 // Protected routes
 router.post('/upload', authenticate, upload.single('file'), uploadFile);
+router.post('/bulk', authenticate, bulkOperation);
 router.get('/my-files', authenticate, getMyFiles); // frontend expects /my-files instead of /
 router.delete('/:id', authenticate, deleteFile);
 
-// Shared/Public file endpoints (stubs for Sprint 2, logic to be fleshed out later)
+// Shared/Public file endpoints
 router.get('/shared-with-me', authenticate, (req, res) => res.json({ success: true, files: [] }));
-router.get('/public', (req, res) => res.json({ success: true, files: [] }));
+router.get('/public', getPublicFiles);
 
 // Mixed-access routes
 router.get('/:id/stream', streamFile);
+router.post('/:id/download', trackDownload);
 
 export default router;

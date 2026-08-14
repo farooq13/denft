@@ -100,7 +100,7 @@ export function Footer() {
                 </h3>
                 <ul className="space-y-3">
                   {links.map(link => (
-                    <li key={link.href}>
+                    <li key={link.label}>
                       <FooterLink
                         href={link.href}
                         label={link.label}

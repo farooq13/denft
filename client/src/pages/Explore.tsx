@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { PageTransition } from '@/components/ui/page-transition'
 import { FileCard } from '@/components/files/FileCard'
 import { SkeletonFileCard } from '@/components/ui/skeleton'
@@ -8,7 +8,7 @@ import { useFiles } from '@/contexts/FileContext'
 import { FileDetailModal } from '@/components/files/FileDetailModal'
 
 export function Explore() {
-  const { publicFiles, fetchPublicFiles } = useFiles()
+  const { publicFiles, totalPublicFiles, fetchPublicFiles, downloadFile } = useFiles()
   const [isInitialising, setIsInitialising] = useState(true)
   
   // Search and Sort
@@ -22,66 +22,42 @@ export function Explore() {
   // Modal State
   const [selectedFile, setSelectedFile] = useState<any | null>(null)
 
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   useEffect(() => {
     let mounted = true
     const loadFiles = async () => {
+      setIsInitialising(true)
       try {
-        await fetchPublicFiles()
+        const skip = (currentPage - 1) * itemsPerPage
+        await fetchPublicFiles(skip, itemsPerPage, debouncedSearch, sortBy)
       } finally {
         if (mounted) setIsInitialising(false)
       }
     }
     loadFiles()
     return () => { mounted = false }
-  }, [fetchPublicFiles])
+  }, [fetchPublicFiles, currentPage, itemsPerPage, debouncedSearch, sortBy])
 
-  // Reset pagination on search
+  // Reset pagination on search or sort
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, sortBy])
+  }, [debouncedSearch, sortBy])
 
-  const filteredAndSortedFiles = useMemo(() => {
-    let result = [...publicFiles]
-
-    // Search
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      result = result.filter(f => 
-        f.fileName?.toLowerCase().includes(q) || 
-        f.category?.toLowerCase().includes(q)
-      )
-    }
-
-    // Sort
-    result.sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return (a.fileName || '').localeCompare(b.fileName || '')
-        case 'size':
-          return (Number(b.fileSize) || 0) - (Number(a.fileSize) || 0)
-        case 'downloads':
-          return (Number(b.downloadCount) || 0) - (Number(a.downloadCount) || 0)
-        case 'date':
-        default:
-          return new Date(b.uploadedAt || 0).getTime() - new Date(a.uploadedAt || 0).getTime()
-      }
-    })
-
-    return result
-  }, [publicFiles, searchQuery, sortBy])
-
-  const totalPages = Math.ceil(filteredAndSortedFiles.length / itemsPerPage)
-  const currentFiles = filteredAndSortedFiles.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
+  const totalPages = Math.max(1, Math.ceil(totalPublicFiles / itemsPerPage))
+  const currentFiles = publicFiles
 
   const handleAction = (action: string, file: any) => {
     if (action === 'view') {
       setSelectedFile(file)
     } else if (action === 'download') {
-      // In a real app, this would trigger a download using the file's IPFS hash
-      window.open(`https://ipfs.io/ipfs/${file.ipfsHash}`, '_blank')
+      downloadFile(file.fileId)
     }
   }
 
@@ -151,16 +127,16 @@ export function Explore() {
               <SkeletonFileCard key={i} />
             ))}
           </div>
-        ) : filteredAndSortedFiles.length === 0 ? (
+        ) : publicFiles.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="inline-flex p-6 rounded-full bg-neutral-900/50 mb-6">
               <Ghost className="h-12 w-12 text-neutral-600" />
             </div>
             <h3 className="text-xl font-bold text-neutral-200 mb-2">No public files found</h3>
             <p className="text-neutral-400 max-w-sm mb-8">
-              {searchQuery ? "Try adjusting your search criteria." : "There are currently no public files available."}
+              {debouncedSearch ? "Try adjusting your search criteria." : "There are currently no public files available."}
             </p>
-            {searchQuery && (
+            {debouncedSearch && (
               <Button variant="outline" onClick={() => setSearchQuery('')}>
                 Clear Search
               </Button>

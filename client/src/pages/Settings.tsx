@@ -6,43 +6,151 @@ import { Badge } from '@/components/ui/badge'
 import { useWallet } from '@/contexts/WalletContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useFiles } from '@/contexts/FileContext'
-import { User, Palette, Sliders, AlertTriangle, Monitor, Sun, Moon, LogOut, Trash2 } from 'lucide-react'
+import { User, Palette, Sliders, AlertTriangle, Monitor, Sun, Moon, LogOut, Trash2, Shield } from 'lucide-react'
+import { useWallet as useSolanaWallet } from '@solana/wallet-adapter-react'
 import { truncateAddress } from '@/lib/utils'
 
 type ViewMode = 'grid' | 'list'
 
 export function Settings() {
-  const { walletAddress, walletName, balance, disconnectWallet } = useWallet()
   const { theme, setTheme } = useTheme()
   const { files, bulkOperation, isLoading } = useFiles()
   
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [passcode, setPasscode] = useState('')
+  const [isSavingPasscode, setIsSavingPasscode] = useState(false)
+  const { hasPasscode, setHasPasscode, showToast, walletAddress, walletName, balance, disconnectWallet, token, refreshTokenFromBackend } = useWallet()
+  const { signMessage } = useSolanaWallet()
+  const { fetchFiles } = useFiles()
 
-  // Load preferences from localStorage on mount
+  // Fetch preferences from backend on mount
   useEffect(() => {
-    const savedViewMode = localStorage.getItem('denft-view-mode') as ViewMode | null
-    if (savedViewMode) setViewMode(savedViewMode)
-  }, [])
+    if (!token) return;
+    fetch('/api/user/settings', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.data) {
+        if (data.data.viewMode) {
+          setViewMode(data.data.viewMode);
+          localStorage.setItem('denft-view-mode', data.data.viewMode);
+        }
+        if (data.data.theme) {
+          setTheme(data.data.theme);
+        }
+      }
+    })
+    .catch(err => console.error("Failed to load settings", err));
+  }, [token, setTheme]);
 
   // Save preferences when they change
-  const handleViewModeChange = (mode: ViewMode) => {
+  const handleViewModeChange = async (mode: ViewMode) => {
     setViewMode(mode)
     localStorage.setItem('denft-view-mode', mode)
-    // Dispatch event so other components (like Files.tsx) can update if they listen,
-    // though typically they read on mount or we might want a Context for it.
-    // For now, it will persist across sessions.
+    if (token) {
+      fetch('/api/user/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ viewMode: mode })
+      }).catch(console.error);
+    }
+  }
+
+  const handleThemeChange = async (newTheme: string) => {
+    setTheme(newTheme as any)
+    if (token) {
+      fetch('/api/user/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ theme: newTheme })
+      }).catch(console.error);
+    }
+  }
+
+  const handleSavePasscode = async () => {
+    if (passcode && !/^\d{3,6}$/.test(passcode)) {
+      showToast('Passcode must be a 3 to 6 digit number', 'error')
+      return
+    }
+
+    setIsSavingPasscode(true)
+    try {
+      const res = await fetch('/api/user/passcode', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ passcode })
+      })
+      const data = await res.json()
+      if (data.success) {
+        showToast(passcode ? 'Passcode set successfully' : 'Passcode removed', 'success')
+        setHasPasscode(!!passcode)
+        setPasscode('')
+      } else {
+        showToast(data.error || 'Failed to set passcode', 'error')
+      }
+    } catch (e) {
+      showToast('Error setting passcode', 'error')
+    } finally {
+      setIsSavingPasscode(false)
+    }
   }
 
   const handleDeleteAll = async () => {
     if (files.length === 0) return
     setIsDeleting(true)
     try {
-      await bulkOperation(files.map(f => f.fileId), 'delete')
-      setShowDeleteConfirm(false)
-    } catch (error) {
-      console.error('Failed to delete files', error)
+      if (!signMessage) throw new Error("Wallet does not support signing messages");
+
+      const message = `WIPE_VAULT: I authorize the deletion of all my files on Denft. Timestamp: ${new Date().toISOString()}`;
+      const messageBytes = new TextEncoder().encode(message);
+      const signature = await signMessage(messageBytes);
+
+      let currentToken = token;
+      
+      const executeWipe = async () => {
+        return await fetch('/api/user/danger/wipe-vault', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentToken}`
+          },
+          body: JSON.stringify({
+            message,
+            signature: Array.from(signature)
+          })
+        });
+      };
+
+      let res = await executeWipe();
+      
+      if (res.status === 401 && refreshTokenFromBackend) {
+        const newToken = await refreshTokenFromBackend();
+        if (newToken) {
+          currentToken = newToken;
+          res = await executeWipe();
+        }
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        showToast('Vault wiped successfully. All files deleted.', 'success');
+        setShowDeleteConfirm(false);
+        await fetchFiles(); // Refetch to clear the UI
+      } else {
+        const errorMsg = data.error && typeof data.error === 'object' 
+          ? data.error.message 
+          : data.error;
+        throw new Error(errorMsg || 'Failed to wipe vault');
+      }
+    } catch (error: any) {
+      console.error('Failed to wipe vault', error)
+      showToast(error.message || 'Failed to wipe vault', 'error')
     } finally {
       setIsDeleting(false)
     }
@@ -64,6 +172,7 @@ export function Settings() {
             {[
               { id: 'account', label: 'Account', icon: User },
               { id: 'preferences', label: 'Preferences', icon: Sliders },
+              { id: 'security', label: 'Security & Privacy', icon: Shield },
               { id: 'appearance', label: 'Appearance', icon: Palette },
               { id: 'danger', label: 'Danger Zone', icon: AlertTriangle, className: 'text-error-400' },
             ].map((item) => (
@@ -157,6 +266,45 @@ export function Settings() {
               </Card>
             </section>
 
+            {/* SECURITY SECTION */}
+            <section id="security" className="space-y-4 scroll-mt-24">
+              <h2 className="text-xl font-semibold text-neutral-100 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-success-400" /> Security & Privacy
+              </h2>
+              <Card variant="default">
+                <CardBody className="p-0 divide-y divide-neutral-800">
+                  <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="flex-1 mr-4">
+                      <h4 className="font-medium text-neutral-200">Viewing Passcode</h4>
+                      <p className="text-sm text-neutral-400 mt-1">Set a 3-6 digit passcode to lock your files. You will need to enter this passcode before you can view any file contents in the vault.</p>
+                      {hasPasscode && (
+                        <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success-500/10 text-success-400 text-xs font-medium border border-success-500/20">
+                          <Shield className="h-3.5 w-3.5" /> Passcode is currently active
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                      <input 
+                        type="password" 
+                        placeholder="3-6 digits" 
+                        maxLength={6}
+                        value={passcode}
+                        onChange={(e) => setPasscode(e.target.value.replace(/\D/g, ''))}
+                        className="w-28 px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-primary-500"
+                      />
+                      <Button 
+                        variant="primary" 
+                        onClick={handleSavePasscode}
+                        disabled={isSavingPasscode || (passcode.length > 0 && passcode.length < 3)}
+                      >
+                        {isSavingPasscode ? 'Saving...' : (hasPasscode && !passcode ? 'Remove' : 'Set Passcode')}
+                      </Button>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            </section>
+
             {/* APPEARANCE SECTION */}
             <section id="appearance" className="space-y-4 scroll-mt-24">
               <h2 className="text-xl font-semibold text-neutral-100 flex items-center gap-2">
@@ -176,7 +324,7 @@ export function Settings() {
                       ].map((t) => (
                         <button
                           key={t.id}
-                          onClick={() => setTheme(t.id as any)}
+                          onClick={() => handleThemeChange(t.id)}
                           className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
                             theme === t.id 
                               ? 'border-primary-500 bg-primary-500/10 text-primary-400' 

@@ -36,26 +36,16 @@ export function SocialLoginModal({ isOpen, onClose }: SocialLoginModalProps) {
   const handleSocialLogin = async (provider: 'google' | 'twitter' | 'github') => {
     try {
       setIsConnecting(provider)
-      // 1. Web3Auth Login (Social)
-      const web3authProvider = await loginWithSocial(provider)
-      if (!web3authProvider) throw new Error('Web3Auth Provider not initialized')
+      // 1. Web3Auth Login (Social) — returns { address, signMessage } on success
+      const result = await loginWithSocial(provider)
+      if (!result) throw new Error('Web3Auth login did not return a result')
 
-      // 2. Extract Solana Wallet
-      const { SolanaWallet } = await import('@web3auth/solana-provider')
+      // 2. Build PublicKey from the wallet-standard address
       const { PublicKey } = await import('@solana/web3.js')
-      const solanaWallet = new SolanaWallet(web3authProvider)
-      const accounts = await solanaWallet.requestAccounts()
-      
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No Solana account found')
-      }
-      
-      const pubKey = new PublicKey(accounts[0])
+      const pubKey = new PublicKey(result.address)
 
-      // 3. Authenticate with backend using custom signer
-      await authenticateWallet(pubKey, `Web3Auth (${provider})`, async (msg) => {
-        return await solanaWallet.signMessage(msg)
-      })
+      // 3. Authenticate with backend using the wallet-standard signer
+      await authenticateWallet(pubKey, `Web3Auth (${provider})`, result.signMessage)
       
       showToast(`Successfully logged in with ${provider}`, 'success')
       onClose()
