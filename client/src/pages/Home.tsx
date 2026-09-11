@@ -24,42 +24,6 @@ import { SocialLoginModal } from '@/components/auth/SocialLoginModal'
 import { cn } from '@/lib/cn'
 import { formatFileSize } from '@/lib/utils'
 
-//  Data 
-const FEATURES = [
-  {
-    icon: Zap,
-    title: 'Lightning Fast',
-    description: "Optimized for speed with instant uploads, downloads, and verification on Solana's high-performance network.",
-    color: 'text-warning-400',
-    bg: 'bg-warning-500/10',
-    border: 'border-warning-500/20',
-  },
-  {
-    icon: Lock,
-    title: 'Privacy Focused',
-    description: 'End-to-end encryption with granular access controls. You own your data, you control who sees it.',
-    color: 'text-success-400',
-    bg: 'bg-success-500/10',
-    border: 'border-success-500/20',
-  },
-  {
-    icon: Share2,
-    title: 'Smart Sharing',
-    description: 'Share files with advanced permissions, expiration dates, and download limits — all enforced by smart contracts.',
-    color: 'text-accent-400',
-    bg: 'bg-accent-500/10',
-    border: 'border-accent-500/20',
-  },
-  {
-    icon: Globe,
-    title: 'Global Access',
-    description: 'Access your files from anywhere in the world with just your wallet. No accounts, no passwords needed.',
-    color: 'text-primary-400',
-    bg: 'bg-primary-500/10',
-    border: 'border-primary-500/20',
-  },
-]
-
 
 const HOW_IT_WORKS = [
   {
