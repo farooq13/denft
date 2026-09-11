@@ -33,30 +33,28 @@ import { DashboardSkeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatFileSize } from '@/lib/utils'
 
-//  Mock Data 
 
-// Removed mock data generators
 
 const QUICK_ACTIONS = [
   {
     title: 'Upload Files',
     description: 'Add new files to your secure storage',
     icon: Upload,
-    color: 'from-primary-500 to-primary-600',
+    // color: 'from-primary-500 to-primary-600',
     path: '/upload',
   },
   {
     title: 'Verify File',
     description: 'Check file authenticity on blockchain',
     icon: Shield,
-    color: 'from-success-500 to-success-600',
+    // color: 'from-success-500 to-success-600',
     path: '/verify',
   },
   {
     title: 'Browse Files',
     description: 'Manage your uploaded files',
     icon: Files,
-    color: 'from-accent-500 to-accent-600',
+    // color: 'from-accent-500 to-accent-600',
     path: '/files',
   },
 ]
@@ -159,15 +157,15 @@ export function Dashboard() {
       <div className="space-y-8 animate-fade-in">
         
         {/*  Welcome Header  */}
-        <Card variant="elevated" className="relative overflow-hidden border-primary-500/20 bg-gradient-to-r from-neutral-900 to-neutral-800">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" aria-hidden="true" />
+        <Card  className="relative overflow-hidden  ">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px]  rounded-full  -translate-y-1/2 translate-x-1/3 pointer-events-none" aria-hidden="true" />
           <CardBody className="p-8 relative z-10">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               <div className="flex items-center gap-5">
                 <img
                   src={`https://ui-avatars.com/api/?name=${walletName}&background=3B82F6&color=fff`}
                   alt="Avatar"
-                  className="w-16 h-16 rounded-full border-2 border-primary-500/30"
+                  className="w-16 h-16 rounded-full border-2 border-primary-500/20"
                 />
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold text-neutral-50 mb-1">
@@ -189,7 +187,7 @@ export function Dashboard() {
                 variant="primary"
                 leftIcon={<Upload className="h-4 w-4" />}
                 onClick={() => navigate('/upload')}
-                className="shrink-0"
+                className="shrink-0 cursor-pointer"
               >
                 Upload Files
               </Button>
@@ -200,12 +198,12 @@ export function Dashboard() {
         {/*  Quick Stats  */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { label: 'Total Files', value: quickStats.totalFiles, icon: Files, color: 'text-primary-400', bg: 'bg-primary-500/10' },
-            { label: 'Total Downloads', value: quickStats.totalDownloads, icon: Download, color: 'text-success-400', bg: 'bg-success-500/10' },
-            { label: 'Total Views', value: quickStats.totalViews, icon: Eye, color: 'text-accent-400', bg: 'bg-accent-500/10' },
-            { label: 'Files Shared', value: quickStats.filesShared, icon: Share2, color: 'text-warning-400', bg: 'bg-warning-500/10' },
+            { label: 'Total Files', value: quickStats.totalFiles, icon: Files, color: 'text-primary-400' },
+            { label: 'Total Downloads', value: quickStats.totalDownloads, icon: Download, color: 'text-success-400' },
+            { label: 'Total Views', value: quickStats.totalViews, icon: Eye, color: 'text-accent-400' },
+            { label: 'Files Shared', value: quickStats.filesShared, icon: Share2, color: 'text-warning-400' },
           ].map(stat => (
-            <Card key={stat.label} variant="ghost">
+            <Card key={stat.label} >
               <CardBody className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -232,7 +230,7 @@ export function Dashboard() {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary-500/10 rounded-lg">
+                    <div className="p-2  rounded-lg">
                       <HardDrive className="h-5 w-5 text-primary-400" />
                     </div>
                     <div>
@@ -267,7 +265,7 @@ export function Dashboard() {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-success-500/10 rounded-lg">
+                    <div className="p-2 rounded-lg">
                       <Activity className="h-5 w-5 text-success-400" />
                     </div>
                     <div>
@@ -371,16 +369,16 @@ export function Dashboard() {
           <div className="space-y-8">
             
             {/* Quick Upload Banner */}
-            <Card variant="outlined" className="bg-gradient-to-br from-primary-600/10 to-accent-600/10 border-primary-500/20 hover:border-primary-500/40 cursor-pointer transition-colors" onClick={() => navigate('/upload')}>
+            <Card variant="outlined" className="border-primary-500/20 hover:border-primary-500/40 cursor-pointer transition-colors" onClick={() => navigate('/upload')}>
               <CardBody className="p-6 text-center">
-                <div className="inline-flex p-4 bg-primary-500/20 rounded-full mb-4">
+                <div className="inline-flex p-4 rounded-full mb-4">
                   <Upload className="h-8 w-8 text-primary-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-neutral-50 mb-1">Quick Upload</h3>
                 <p className="text-sm text-neutral-400 mb-5">
                   Drag & drop files or click to browse
                 </p>
-                <Button variant="primary" fullWidth leftIcon={<Plus className="h-4 w-4" />} onClick={(e) => { e.stopPropagation(); navigate('/upload'); }}>
+                <Button variant="primary" fullWidth leftIcon={<Plus className="h-4 w-4" />} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); navigate('/upload'); }}>
                   Select Files
                 </Button>
               </CardBody>

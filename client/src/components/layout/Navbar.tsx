@@ -31,11 +31,11 @@ type Theme = 'light' | 'dark' | 'system'
 
 //  Nav item definitions 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, protected: true },
-  { href: '/upload',    label: 'Upload',    icon: Upload,          protected: true },
-  { href: '/files',     label: 'My Vault',  icon: Files,           protected: true },
-  { href: '/explore',   label: 'Explore',   icon: Cloud,           protected: false },
-  { href: '/settings',  label: 'Settings',  icon: Settings,        protected: true },
+  { href: '/dashboard', label: 'Dashboard', protected: true },
+  { href: '/upload',    label: 'Upload',    protected: true },
+  { href: '/files',     label: 'My Vault',  protected: true },
+  { href: '/explore',   label: 'Explore',   protected: false },
+  { href: '/settings',  label: 'Settings',  protected: true },
 ] as const
 
 //  Sub-components 
@@ -44,14 +44,13 @@ const NAV_ITEMS = [
 function NavLink({
   href,
   label,
-  icon: Icon,
   isActive,
   onClick,
   className,
 }: {
   href: string
   label: string
-  icon: React.ElementType
+  // icon: React.ElementType
   isActive: boolean
   onClick?: () => void
   className?: string
@@ -70,7 +69,7 @@ function NavLink({
         className
       )}
     >
-      <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+      {/* <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /> */}
       {label}
     </Link>
   )
@@ -381,7 +380,6 @@ export function Navbar() {
                   <NavLink
                     href={item.href}
                     label={item.label}
-                    icon={item.icon}
                     isActive={isActive(item.href)}
                   />
                 </div>
@@ -390,7 +388,7 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* ── Right: Theme + Wallet + Hamburger ─────────────── */}
+        {/* ── Right: Theme + Wallet + Hamburger  */}
         <div className="flex items-center gap-2">
           {/* Theme menu */}
           <ThemeMenu theme={theme as Theme} setTheme={setTheme} />
@@ -428,7 +426,7 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* ── Mobile Menu Backdrop ─────────────────────────────── */}
+      {/* Mobile Menu Backdrop  */}
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
@@ -437,7 +435,7 @@ export function Navbar() {
         />
       )}
 
-      {/* ── Mobile Menu Drawer ───────────────────────────────── */}
+      {/* Mobile Menu Drawer  */}
       <div
         id="mobile-menu"
         role="dialog"
@@ -481,7 +479,7 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 label={item.label}
-                icon={item.icon}
+                // icon={item.icon}
                 isActive={isActive(item.href)}
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-3 px-4 text-base"
@@ -560,9 +558,7 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* TODO Sprint 2: Remove this per-page mobile title banner once
-          pages have their own headings */}
-      {/* Mobile page title strip removed — pages will have their own <h1> */}
+     
     </>
   )
 }
