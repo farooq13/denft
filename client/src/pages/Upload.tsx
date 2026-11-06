@@ -1,7 +1,3 @@
-// src/pages/Upload.tsx
-// Sprint 4 — File Upload Experience
-// Complete rewrite removing NextUI and introducing multi-stage upload UI.
-
 import React, { useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -36,7 +32,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/cn'
 import { formatFileSize } from '@/lib/utils'
 
-// ── TYPES & CONSTANTS ─────────────────────────────────────────
+// TYPES & CONSTANTS
 
 type UploadStage = 
   | 'idle'
@@ -61,7 +57,7 @@ const fileCategories = [
   { value: 'other', label: 'Other', icon: FileText },
 ]
 
-// ── UTILS ─────────────────────────────────────────────────────
+//  UTILS 
 
 const getFileIcon = (file: File) => {
   const type = file.type.toLowerCase()
@@ -82,7 +78,7 @@ const detectFileCategory = (file: File): string => {
   return 'other'
 }
 
-// ── UPLOAD COMPONENT ──────────────────────────────────────────
+//  UPLOAD COMPONENT 
 
 export function Upload() {
   const navigate = useNavigate()
@@ -108,7 +104,7 @@ export function Upload() {
   })
   const [tagInput, setTagInput] = useState('')
 
-  // ── DRAG & DROP HANDLERS ────────────────────────────────────
+  //  DRAG & DROP HANDLERS 
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -146,7 +142,7 @@ export function Upload() {
     e.target.value = ''
   }, [])
 
-  // ── SETTINGS HANDLERS ───────────────────────────────────────
+  //  SETTINGS HANDLERS 
 
   const addTag = () => {
     const tag = tagInput.trim().toLowerCase()
@@ -160,7 +156,7 @@ export function Upload() {
     setSettings(prev => ({ ...prev, tags: prev.tags.filter(tag => tag !== t) }))
   }
 
-  // ── MULTI-STAGE UPLOAD LOGIC ────────────────────────────────
+  //  MULTI-STAGE UPLOAD LOGIC 
 
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms))
 
@@ -229,7 +225,7 @@ export function Upload() {
     setErrorMsg(null)
   }
 
-  // ── RENDER HELPERS ──────────────────────────────────────────
+  //  RENDER HELPERS 
 
   const renderStageIcon = (currentStage: UploadStage, targetStage: UploadStage, Icon: any, overrideColor?: string) => {
     const stages = ['idle', 'preparing', 'encrypting', 'ipfs', 'signing', 'confirming', 'success', 'error']
@@ -266,15 +262,7 @@ export function Upload() {
     <PageTransition>
       <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-12">
         
-        {/* HEADER */}
-        <div className="text-center pt-4 mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-neutral-50 mb-3">
-            Secure Upload
-          </h1>
-          <p className="text-neutral-400 max-w-xl mx-auto text-sm md:text-base">
-            Store your files securely on IPFS with cryptographic verification on the Solana blockchain.
-          </p>
-        </div>
+      
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
