@@ -156,44 +156,7 @@ export function Dashboard() {
     <PageTransition>
       <div className="space-y-8 animate-fade-in">
         
-        {/*  Welcome Header  */}
-        <Card  className="relative overflow-hidden  ">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px]  rounded-full  -translate-y-1/2 translate-x-1/3 pointer-events-none" aria-hidden="true" />
-          <CardBody className="p-8 relative z-10">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="flex items-center gap-5">
-                <img
-                  src={`https://ui-avatars.com/api/?name=${walletName}&background=3B82F6&color=fff`}
-                  alt="Avatar"
-                  className="w-16 h-16 rounded-full border-2 border-primary-500/20"
-                />
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-neutral-50 mb-1">
-                    Welcome back!
-                  </h1>
-                  <p className="text-neutral-400 text-sm">
-                    Connected as <span className="text-primary-400 font-mono">{walletAddress?.slice(0, 8)}…{walletAddress?.slice(-4)}</span>
-                  </p>
-                  <div className="flex items-center gap-3 mt-3">
-                    <Badge variant="success" size="sm">{walletName}</Badge>
-                    <span className="text-sm text-neutral-400 font-medium">
-                      Balance: <span className="text-primary-400">{balance.toFixed(4)} SOL</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <Button
-                variant="primary"
-                leftIcon={<Upload className="h-4 w-4" />}
-                onClick={() => navigate('/upload')}
-                className="shrink-0 cursor-pointer"
-              >
-                Upload Files
-              </Button>
-            </div>
-          </CardBody>
-        </Card>
+       
 
         {/*  Quick Stats  */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
